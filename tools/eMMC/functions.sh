@@ -141,8 +141,8 @@ prepare_environment() {
 	echo_broadcast "==> Giving system time to stablize..."
 	countdown 5
 	
-	echo_broadcast "==> umount /boot"
-	umount /boot
+	#echo_broadcast "==> umount /boot"
+	#umount /boot
 
 	echo_broadcast "==> Preparing /tmp"
 	mount -t tmpfs tmpfs /tmp
