@@ -1,2 +1,2 @@
-# ebf_6ull_debian
-debian related
+# ebf_6ull_bootscript
+本项目的脚本主要用于sd卡烧录固件到其他存储介质，包括eMMC和Nandflash。
