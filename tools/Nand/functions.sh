@@ -312,7 +312,7 @@ end_script() {
 
     flush_cache
     unset are_we_flasher
-    are_we_flasher=$(grep init-eMMC-flasher /proc/cmdline || true)
+    are_we_flasher=$(grep init-Nand-flasher /proc/cmdline || true)
     if [ ! "x${are_we_flasher}" = "x" ] ; then
       echo_broadcast "We are init"
       #When run as init
