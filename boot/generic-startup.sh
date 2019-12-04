@@ -9,6 +9,13 @@ if [ ! "x${are_we_flasher}" = "x" ] ; then
 	exit
 fi
 
+unset are_we_flasher
+are_we_flasher=$(grep init-Nand-flasher /proc/cmdline || true)
+if [ ! "x${are_we_flasher}" = "x" ] ; then
+	systemctl poweroff || halt
+	exit
+fi
+
 #Regenerate ssh host keys
 if [ -f /etc/ssh/ssh.regenerate ] ; then
 	echo "generic-board-startup: regenerating ssh keys"

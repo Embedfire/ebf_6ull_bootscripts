@@ -127,8 +127,8 @@ mmc_mount_fail() {
 }
 
 try_vfat() {
-	echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot (trying vfat)"
-	mount -t vfat ${boot_drive} /boot/uboot/ -o ro || mmc_mount_fail
+	echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot (trying vfat)"
+	mount -t vfat ${boot_drive} /boot -o ro || mmc_mount_fail
 }
 
 prepare_environment() {
@@ -145,6 +145,9 @@ prepare_environment() {
   
 	mount -t tmpfs tmpfs /tmp
 
+	echo_broadcast "==> Preparing:/sys/kernel/debug"
+	mount -t debugfs debugfs /sys/kernel/debug
+	
 	if [ -f /proc/sys/vm/min_free_kbytes ] ; then
 		echo_broadcast "==> Preparing sysctl"
 		value_min_free_kbytes=$(sysctl -n vm.min_free_kbytes)
@@ -183,15 +186,8 @@ prepare_environment() {
 	fi
 
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-		echo_broadcast "====> The Boot and Root drives are identified to be different."
-		echo_broadcast "====> Giving system time to stablize..."
-		countdown 5
-		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
-		if [ ! -d /boot/uboot ] ; then
-			echo_broadcast "====> Directory /boot/uboot unexist, create it"
-			mkdir -p /boot/uboot
-		fi
-		mount ${boot_drive} /boot/uboot -o ro || try_vfat
+		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot"
+		mount ${boot_drive} /boot -o ro || try_vfat
 	fi
 
 	generate_line 80 '='
@@ -256,18 +252,21 @@ teardown_environment() {
   echo_broadcast "Tearing Down script environment"
   echo_broadcast "==> Unmounting /tmp"
   flush_cache
+  
   umount /tmp || true
+  echo_broadcast "==> Unmounting /sys/kernel/debug"
+  flush_cache
+  umount /sys/kernel/debug || true
+  
   if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
     echo_broadcast "==> Unmounting /boot"
     flush_cache
-    umount /boot/uboot || true
+    umount /boot || true
   fi
   reset_leds 'none'
 
   echo_broadcast "==> Force writeback of nand buffers by Syncing: ${destination}"
   sync
-  generate_line 40
-  # dd if=${destination} of=/dev/null count=100000
   generate_line 40
   echo_broadcast "===> Syncing: ${destination} complete"
   end_time=$(date +%s)
@@ -1409,6 +1408,7 @@ prepare_drive() {
     _teardown_future_rootfs
   fi
   teardown_environment
+
   end_script
 }
 
