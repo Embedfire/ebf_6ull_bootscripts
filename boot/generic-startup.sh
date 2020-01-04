@@ -6,7 +6,7 @@ unset are_we_flasher
 are_we_flasher=$(grep init-eMMC-flasher /proc/cmdline || true)
 if [ ! "x${are_we_flasher}" = "x" ] ; then
 	#systemctl poweroff || halt
-	/boot/led_demo
+	sudo led_demo
 	exit
 fi
 
@@ -14,7 +14,7 @@ unset are_we_flasher
 are_we_flasher=$(grep init-Nand-flasher /proc/cmdline || true)
 if [ ! "x${are_we_flasher}" = "x" ] ; then
 	#systemctl poweroff || halt
-	/boot/led_demo
+	sudo led_demo
 	exit
 fi
 
