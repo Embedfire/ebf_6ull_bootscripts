@@ -6,8 +6,8 @@
 # source $(dirname "$0")/functions.sh
 
 version_message="1.20180412: all ssh regneration override..."
-emmcscript="cmdline=init=/opt/scripts/tools/eMMC/$(basename $0)"
-
+#emmcscript="cmdline=init=/opt/scripts/tools/eMMC/$(basename $0)"
+emmcscript="flash_firmware=enable"
 #This is just a backup-backup-backup for old images...
 #https://rcn-ee.com/repos/bootloader/am335x_evm/
 http_spl="MLO-am335x_evm-v2018.09-r7"
