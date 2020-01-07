@@ -7,7 +7,7 @@
 
 version_message="1.20180412: all ssh regneration override..."
 #nandscript="cmdline=init=/opt/scripts/tools/Nand/$(basename $0)"
-emmcscript="flash_firmware=enable"
+nandscript="flash_firmware=enable"
 #This is just a backup-backup-backup for old images...
 #https://rcn-ee.com/repos/bootloader/am335x_evm/
 http_spl="MLO-am335x_evm-v2018.09-r7"
