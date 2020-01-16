@@ -126,6 +126,7 @@ EOF
   update-rc.d resize2fs_once defaults &&
   echo "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
   rmdir /home/debian/.resizerootfs
+  systemctl reboot
 fi
 
 if [ -d /sys/class/gpio/ ] ; then
