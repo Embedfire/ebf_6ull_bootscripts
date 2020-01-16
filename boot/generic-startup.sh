@@ -3,7 +3,15 @@
 #eMMC flasher just exited single user mode via: [exec /sbin/init]
 #as we can't shudown properly in single user mode..
 unset are_we_flasher
-are_we_flasher=$(grep flash_firmware /proc/cmdline || true)
+are_we_flasher=$(grep init-eMMC-flasher /proc/cmdline || true)
+if [ ! "x${are_we_flasher}" = "x" ] ; then
+	#systemctl poweroff || halt
+	sudo led_demo
+	exit
+fi
+
+unset are_we_flasher
+are_we_flasher=$(grep init-Nand-flasher /proc/cmdline || true)
 if [ ! "x${are_we_flasher}" = "x" ] ; then
 	#systemctl poweroff || halt
 	sudo led_demo
