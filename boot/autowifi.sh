@@ -2,9 +2,9 @@
 
 echo "root"|su -c ' ifconfig wlan0 up' root
 
-if [ -f /etc/wpa_supplicant/wifi.conf ] ; then
+if [ -f /etc/wpa_supplicant/wpa_supplicant.conf ] ; then
 
-  echo "root"|su -c 'wpa_supplicant -B -c /etc/wpa_supplicant/wifi.conf -iwlan0' root &
+  echo "root"|su -c 'wpa_supplicant -B -c /etc/wpa_supplicant/wpa_supplicant.conf -iwlan0' root &
 
 fi
 
