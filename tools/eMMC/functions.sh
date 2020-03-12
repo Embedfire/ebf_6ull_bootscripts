@@ -815,7 +815,7 @@ _dd_bootloader() {
   echo_broadcast "==> Copying U-Boot with dd if=${dd_uboot_backup} of=${destination} ${dd_uboot}"
   generate_line 60
   echo 0 > /sys/block/${destination#/dev/}boot0/force_ro
-  dd if=${dd_spl_uboot_backup} of=${destination}boot0 conv=notrunc
+  dd if=${dd_uboot_backup} of=${destination}boot0 conv=notrunc
   echo 1 > /sys/block/${destination#/dev/}boot0/force_ro
   mmc bootpart enable 1 1 ${destination}
   generate_line 60
