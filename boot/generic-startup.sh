@@ -168,7 +168,7 @@ if [ -f /proc/device-tree/model ] ; then
 		script="bbai.sh"
 		;;
 	Seeed_i\.MX6_ULL_NPi_Board)
-		script="imx6ull_npi.sh"
+		script="imx6ull_fire.sh"
 		;;
 	*)
 		script="generic.sh"

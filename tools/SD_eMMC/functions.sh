@@ -342,11 +342,20 @@ check_if_run_as_root(){
 
 find_root_drive(){
 	unset root_drive
+	if [ -f /proc/cmdline ] ; then
+		proc_cmdline=$(cat /proc/cmdline | tr -d '\000')
+		echo_broadcast "==> ${proc_cmdline}"
 		generate_line 40
-
-		root_drive=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)
-
+		root_drive=$(cat /proc/cmdline | tr -d '\000' | sed 's/ /\n/g' | grep root=UUID= | awk -F 'root=' '{print $2}' || true)
+		if [ ! "x${root_drive}" = "x" ] ; then
+			root_drive=$(/sbin/findfs ${root_drive} || true)
+		else
+			root_drive=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)
+		fi
 		echo_broadcast "==> root_drive=[${root_drive}]"
+	else
+		echo_broadcast "no /proc/cmdline"
+	fi
 }
 
 flush_cache() {
@@ -805,7 +814,10 @@ _dd_bootloader() {
 
   echo_broadcast "==> Copying U-Boot with dd if=${dd_uboot_backup} of=${destination} ${dd_uboot}"
   generate_line 60
-  dd if=${dd_uboot_backup} of=${destination} ${dd_uboot} conv=notrunc
+  echo 0 > /sys/block/${destination#/dev/}boot0/force_ro
+  dd if=${dd_uboot_backup} of=${destination}boot0 ${dd_uboot} conv=notrunc
+  echo 1 > /sys/block/${destination#/dev/}boot0/force_ro
+  mmc bootpart enable 1 1 ${destination}
   generate_line 60
   echo_broadcast "Writing bootloader completed"
   generate_line 80 '='
@@ -1252,7 +1264,7 @@ partition_device() {
     conf_boot_endmb=${conf_boot_endmb:-"96"}
     sfdisk_fstype=${sfdisk_fstype:-"0xE"}
     boot_label=${boot_label:-"BEAGLEBONE"}
-    rootfs_label=${rootfs_label:-"rootfs1"}
+    rootfs_label=${rootfs_label:-"rootfs"}
 
     sfdisk_options="--force --Linux --in-order --unit M"
     sfdisk_boot_startmb="${conf_boot_startmb}"

@@ -5,20 +5,20 @@ _do () {
 }
 
 
-if [ ! -f /boot/vmlinuz* ]; then
+if [ ! -f /boot/vmlinuz-$(uname -r) ]; then
 	echo "error:fire kernel no exit!"
 else
 	cp -rf /boot /tmp	
 
-	rm /boot/*-4.19.71-imx-r1
+	rm /boot/*-$(uname -r)
 
 	rm -rf /boot/dtbs
 	
 	_do apt update -y
 	
-	_do apt install linux-image-4.19.71-imx-r1 -y
+	_do apt install linux-image-$(uname -r) -y
 
-	if [ -f /boot/vmlinuz* ]; then
+	if [ -f /boot/vmlinuz-$(uname -r) ]; then
 		rm -rf /tmp/boot
 	else
 		cp -rf /tmp/boot /

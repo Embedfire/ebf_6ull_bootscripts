@@ -10,10 +10,11 @@ version_message="1.20180412: all ssh regneration override..."
 nandscript="flash_firmware=enable"
 #This is just a backup-backup-backup for old images...
 #https://rcn-ee.com/repos/bootloader/am335x_evm/
+fat_media=/lib/firmware/fatboot.img
 http_spl="MLO-am335x_evm-v2018.09-r7"
 http_uboot="u-boot-am335x_evm-v2018.09-r7.img"
 
-set -o errtrace
+set -o errtrace 
 
 trap _exit_trap EXIT
 trap _err_trap ERR
@@ -145,7 +146,12 @@ prepare_environment() {
 	mount -t tmpfs tmpfs /tmp
 
 	echo_broadcast "==> Preparing:/sys/kernel/debug"
-	mount -t debugfs debugfs /sys/kernel/debug
+   if grep -qs '/sys/kernel/debug' /proc/mounts; then
+			echo_broadcast "====> debugfs alrealy mount!"
+   else
+			mount -t debugfs debugfs /sys/kernel/debug
+   fi
+	
 	
 	if [ -f /proc/sys/vm/min_free_kbytes ] ; then
 		echo_broadcast "==> Preparing sysctl"
@@ -252,10 +258,10 @@ teardown_environment() {
   echo_broadcast "==> Unmounting /tmp"
   flush_cache
   
-  umount /tmp || true
+  umount /tmp
   echo_broadcast "==> Unmounting /sys/kernel/debug"
   flush_cache
-  umount /sys/kernel/debug || true
+  umount /sys/kernel/debug
   
   if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
     echo_broadcast "==> Unmounting /boot"
@@ -799,7 +805,7 @@ _dd_bootloader() {
   fi
   echo_broadcast "==> Copying U-Boot with kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_backup}"
   generate_line 60
-  kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_backup}
+  kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_nand_backup}
   generate_line 60
   echo_broadcast "Writing bootloader completed"
   generate_line 80 '='
@@ -1109,7 +1115,7 @@ loading_soc_defaults() {
 			generate_line 60 '*'
 			. ${soc_file}
 			echo_broadcast "==> Loaded"
-
+      
 			if [ "x${bootloader_location}" = "x" ] ; then
 				bootloader_location="dd_spl_uboot_boot"
 			fi
@@ -1222,7 +1228,7 @@ partition_drive() {
 partition_device() {
   empty_line
   generate_line 80 '='
-  echo_broadcast "Partitionning ${destination}"
+  echo_broadcast "Partitionning FAT IMAGE"
   generate_line 40
   if [ "x${boot_fstype}" = "xfat" ] ; then
     conf_boot_startmb=${conf_boot_startmb:-"4"}
@@ -1232,12 +1238,13 @@ partition_device() {
     rootfs_label=${rootfs_label:-"rootfs"}
 
     sfdisk_options="--force --Linux --in-order --unit M"
-    sfdisk_boot_startmb="${conf_boot_startmb}"
+    sfdisk_boot_startmb="1"
     sfdisk_boot_size_mb="${conf_boot_endmb}"
     sfdisk_rootfs_startmb=$(($sfdisk_boot_startmb + $sfdisk_boot_size_mb))
-
+    dd if=/dev/zero of=${fat_media} bs=1M count=0 seek=$(($sfdisk_boot_size_mb + 2))
+    sync
     test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true)
-    #成立
+    #鎴愮珛
     if [ "x${test_sfdisk}" = "x" ] ; then
       echo_broadcast "sfdisk: [2.26.x or greater]"
       sfdisk_options="--force"
@@ -1247,26 +1254,29 @@ partition_device() {
     fi
 
     echo_broadcast "==> sfdisk parameters:"
-    echo_broadcast "sfdisk: [sfdisk ${sfdisk_options} ${destination}]"
+    echo_broadcast "sfdisk: [sfdisk ${sfdisk_options} ${fat_media}]"
     echo_broadcast "sfdisk: [${sfdisk_boot_startmb},${sfdisk_boot_size_mb},${sfdisk_fstype},*]"
     echo_broadcast "sfdisk: [${sfdisk_rootfs_startmb},,,-]"
     echo_broadcast "==> Partitionning"
     generate_line 60
-    LC_ALL=C sfdisk ${sfdisk_options} "${destination}" <<-__EOF__
-${sfdisk_boot_startmb},${sfdisk_boot_size_mb},${sfdisk_fstype},*
-${sfdisk_rootfs_startmb},,,-
+    
+    LC_ALL=C sfdisk ${sfdisk_options} "${fat_media}" <<-__EOF__
+${sfdisk_boot_startmb},${sfdisk_boot_size_mb},${sfdisk_fstype},-
 __EOF__
+    media_loop=$(losetup -f || true)
+    losetup -o${sfdisk_boot_startmb} ${media_loop} "${fat_media}"
+    sleep 1
+		sync
     generate_line 60
     flush_cache
     empty_line
     echo_broadcast "==> Partitionning Completed"
     echo_broadcast "==> Generated Partitions:"
     generate_line 60
-    LC_ALL=C sfdisk -l ${destination}
+    LC_ALL=C sfdisk -l ${fat_media}
     generate_line 60
     generate_line 80 '='
-    boot_partition="${destination}p1"
-    rootfs_partition="${destination}p2"
+    boot_partition="${media_loop}"
   else
     conf_boot_startmb=${conf_boot_startmb:-"4"}
     sfdisk_fstype=${sfdisk_fstype:-"L"}
@@ -1326,10 +1336,6 @@ _prepare_future_boot() {
   echo_broadcast "==> Creating temporary boot directory (${tmp_boot_dir})"
   mkdir -p ${tmp_boot_dir} || true
   echo_broadcast "==> Mounting ${boot_partition} to ${tmp_boot_dir}"
-  if grep -qs '/boot' /proc/mounts; then
-			echo_broadcast "====> umount /boot"
-			umount /boot
-  fi
   mount ${boot_partition} ${tmp_boot_dir} -o sync
   empty_line
   generate_line 80 '='
@@ -1387,18 +1393,23 @@ prepare_drive() {
   loading_soc_defaults
   _dd_bootloader
   
-  boot_partition=
-  rootfs_partition=
+  boot_partition=1
+  rootfs_partition=2
+  partition_device
 
   if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
     tmp_rootfs_dir="/tmp/rootfs"
     _prepare_future_rootfs
     tmp_boot_dir="/tmp/rootfs/boot"
     media_rootfs="2"
+    _prepare_future_boot
+    _copy_boot
+    
     _copy_rootfs
     _teardown_future_boot
     _teardown_future_rootfs
   else
+    # it will go here!
     rootfs_label=${boot_label}
     tmp_rootfs_dir="/tmp/rootfs"
     _prepare_future_rootfs
