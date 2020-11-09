@@ -1261,7 +1261,7 @@ partition_device() {
     generate_line 60
     
     LC_ALL=C sfdisk ${sfdisk_options} "${fat_media}" <<-__EOF__
-${sfdisk_boot_startmb},${sfdisk_boot_size_mb},${sfdisk_fstype},-
+${sfdisk_boot_startmb},23,${sfdisk_fstype},-
 __EOF__
     media_loop=$(losetup -f || true)
     losetup -o${sfdisk_boot_startmb} ${media_loop} "${fat_media}"
