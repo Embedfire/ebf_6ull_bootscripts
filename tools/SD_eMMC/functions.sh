@@ -812,10 +812,10 @@ _dd_bootloader() {
 
   _build_uboot_dd_options
 
-  echo_broadcast "==> Copying U-Boot with dd if=${dd_uboot_backup} of=${destination} ${dd_uboot}"
+  echo_broadcast "==> Copying U-Boot with dd if=${dd_uboot_emmc_backup} of=${destination} ${dd_uboot}"
   generate_line 60
   echo 0 > /sys/block/${destination#/dev/}boot0/force_ro
-  dd if=${dd_uboot_backup} of=${destination}boot0 ${dd_uboot} conv=notrunc
+  dd if=${dd_uboot_emmc_backup} of=${destination}boot0 ${dd_uboot} conv=notrunc
   echo 1 > /sys/block/${destination#/dev/}boot0/force_ro
   mmc bootpart enable 1 1 ${destination}
   generate_line 60
@@ -1170,14 +1170,14 @@ loading_soc_defaults() {
 				wget --directory-prefix=/opt/backup/uboot/ http://rcn-ee.com/repos/bootloader/am335x_evm/${http_spl}
 				mv /opt/backup/uboot/${http_spl} /opt/backup/uboot/MLO
 			fi
-			if [ "x${dd_uboot_backup}" = "x" ] ; then
+			if [ "x${dd_uboot_emmc_backup}" = "x" ] ; then
 				echo_broadcast "==> ${soc_file} missing dd u-boot.img"
 				uboot_name="u-boot.img"
 				dd_uboot_count="2"
 				dd_uboot_seek="1"
 				dd_uboot_conf=""
 				dd_uboot_bs="384k"
-				dd_uboot_backup="/opt/backup/uboot/u-boot.img"
+				dd_uboot_emmc_backup="/opt/backup/uboot/u-boot.img"
 
 				echo "" >> ${soc_file}
 				echo "uboot_name=${uboot_name}" >> ${soc_file}
@@ -1185,10 +1185,10 @@ loading_soc_defaults() {
 				echo "dd_uboot_seek=1" >> ${soc_file}
 				echo "dd_uboot_conf=" >> ${soc_file}
 				echo "dd_uboot_bs=384k" >> ${soc_file}
-				echo "dd_uboot_backup=${dd_uboot_backup}" >> ${soc_file}
+				echo "dd_uboot_emmc_backup=${dd_uboot_emmc_backup}" >> ${soc_file}
 			fi
 
-			if [ ! -f "${dd_uboot_backup}" ] ; then
+			if [ ! -f "${dd_uboot_emmc_backup}" ] ; then
 				echo_broadcast "==> missing /opt/backup/uboot/u-boot.img"
 				mkdir -p /opt/backup/uboot/
 				wget --directory-prefix=/opt/backup/uboot/ http://rcn-ee.com/repos/bootloader/am335x_evm/${http_uboot}
