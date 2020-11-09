@@ -12,7 +12,7 @@ else
 	root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)"
 fi
 
-if [ "x${root_drive}" = "x/dev/mmcblk0p1" ] || [ "x${root_drive}" = "x/dev/mmcblk1p1" ] ; then
+if [ "x${root_drive}" = "x/dev/mmcblk0p2" ] || [ "x${root_drive}" = "x/dev/mmcblk1p2" ] ; then
 	actual_image_file="${root_drive%?}1"
 else
 	media_loop=$(losetup -f || true)
