@@ -18,7 +18,7 @@ else
 	media_loop=$(losetup -f || true)
     losetup -o1M ${media_loop} "${fat_media}"
 	mount ${media_loop} ${boot_dir} -o sync
-	actual_image_file=${fat_media}
+	actual_image_file=${media_loop}
 fi
 
 
