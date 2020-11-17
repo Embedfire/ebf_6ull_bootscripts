@@ -1241,10 +1241,10 @@ partition_device() {
     sfdisk_boot_startmb="1"
     sfdisk_boot_size_mb="${conf_boot_endmb}"
     sfdisk_rootfs_startmb=$(($sfdisk_boot_startmb + $sfdisk_boot_size_mb))
-    dd if=/dev/zero of=${fat_media} bs=1M count=0 seek=$(($sfdisk_boot_size_mb + 2))
+    dd if=/dev/zero of=${fat_media} bs=1M count=0 seek=23
     sync
     test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true)
-    #鎴愮珛
+
     if [ "x${test_sfdisk}" = "x" ] ; then
       echo_broadcast "sfdisk: [2.26.x or greater]"
       sfdisk_options="--force"
