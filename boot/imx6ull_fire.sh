@@ -23,3 +23,5 @@ fi
 
 
 modprobe g_multi file=${actual_image_file} removable=1 cdrom=0 ro=0 stall=0 nofua=1 iManufacturer=embedfire iProduct=embedfire iSerialNumber=1234fire5678
+
+$(dirname $0)/autoconfigure_usb0.sh || true
