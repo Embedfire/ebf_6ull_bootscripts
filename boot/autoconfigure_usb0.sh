@@ -189,10 +189,8 @@ if [ "x${deb_usb_address}" != "x" -a\
      "x${deb_usb_gateway}" != "x" -a\
      "x${deb_usb_netmask}" != "x" ] ; then
 
-	until [ -d /sys/class/net/usb0/ ] ; do
-		sleep 3
-		echo "g_multi: waiting for /sys/class/net/usb0/"
-	done
+	sleep 3
+	echo "g_multi: waiting for /sys/class/net/usb0/"
 
 	if [ -d /sys/kernel/config/usb_gadget ] ; then
 		/sbin/ifconfig usb0 ${deb_usb_address} netmask ${deb_usb_netmask} || true
