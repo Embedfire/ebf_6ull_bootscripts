@@ -21,6 +21,9 @@ else
 	actual_image_file=${media_loop}
 fi
 
+if [ -f /var/lib/alsa/asound.state ] ; then
+	aplay -l && alsactl restore asound.state
+fi
 
 modprobe g_multi file=${actual_image_file} removable=1 cdrom=0 ro=0 stall=0 nofua=1 iManufacturer=embedfire iProduct=embedfire iSerialNumber=1234fire5678
 
