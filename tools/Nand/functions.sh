@@ -128,7 +128,7 @@ mmc_mount_fail() {
 
 try_vfat() {
 	echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot (trying vfat)"
-	mount -t vfat ${boot_drive} /boot -o ro || mmc_mount_fail
+	mount -t vfat ${boot_drive} /boot/uboot/ -o ro || mmc_mount_fail
 }
 
 prepare_environment() {
@@ -190,9 +190,14 @@ prepare_environment() {
 		echo_broadcast "====> Machine is compatible with BeagleBone Black"
 	fi
 
+  if [ ! -d /boot/uboot ] ; then
+			echo_broadcast "====> Directory /boot/uboot unexist, create it"
+			mkdir -p /boot/uboot
+		fi
+
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot"
-		mount ${boot_drive} /boot -o ro || try_vfat
+		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
+		mount ${boot_drive} /boot/uboot -o ro || try_vfat
 	fi
 
 	generate_line 80 '='
@@ -803,7 +808,7 @@ _dd_bootloader() {
     dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}
     generate_line 60
   fi
-  echo_broadcast "==> Copying U-Boot with kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_backup}"
+  echo_broadcast "==> Copying U-Boot with kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_nand_backup}"
   generate_line 60
   kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_nand_backup}
   generate_line 60
@@ -1142,14 +1147,14 @@ loading_soc_defaults() {
 				wget --directory-prefix=/opt/backup/uboot/ http://rcn-ee.com/repos/bootloader/am335x_evm/${http_spl}
 				mv /opt/backup/uboot/${http_spl} /opt/backup/uboot/MLO
 			fi
-			if [ "x${dd_uboot_backup}" = "x" ] ; then
+			if [ "x${dd_uboot_nand_backup}" = "x" ] ; then
 				echo_broadcast "==> ${soc_file} missing dd u-boot.img"
 				uboot_name="u-boot.img"
 				dd_uboot_count="2"
 				dd_uboot_seek="1"
 				dd_uboot_conf=""
 				dd_uboot_bs="384k"
-				dd_uboot_backup="/opt/backup/uboot/u-boot.img"
+				dd_uboot_nand_backup="/opt/backup/uboot/u-boot.img"
 
 				echo "" >> ${soc_file}
 				echo "uboot_name=${uboot_name}" >> ${soc_file}
@@ -1157,10 +1162,10 @@ loading_soc_defaults() {
 				echo "dd_uboot_seek=1" >> ${soc_file}
 				echo "dd_uboot_conf=" >> ${soc_file}
 				echo "dd_uboot_bs=384k" >> ${soc_file}
-				echo "dd_uboot_backup=${dd_uboot_backup}" >> ${soc_file}
+				echo "dd_uboot_nand_backup=${dd_uboot_nand_backup}" >> ${soc_file}
 			fi
 
-			if [ ! -f "${dd_uboot_backup}" ] ; then
+			if [ ! -f "${dd_uboot_nand_backup}" ] ; then
 				echo_broadcast "==> missing /opt/backup/uboot/u-boot.img"
 				mkdir -p /opt/backup/uboot/
 				wget --directory-prefix=/opt/backup/uboot/ http://rcn-ee.com/repos/bootloader/am335x_evm/${http_uboot}
