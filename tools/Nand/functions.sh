@@ -269,9 +269,9 @@ teardown_environment() {
   umount /sys/kernel/debug
   
   if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-    echo_broadcast "==> Unmounting /boot"
+    echo_broadcast "==> Unmounting /boot/uboot"
     flush_cache
-    umount /boot || true
+    umount /boot/uboot || true
   fi
   reset_leds 'none'
 
