@@ -61,7 +61,7 @@ if [ -f /boot/efi/EFI/efi.gen ] ; then
 fi
 
 #Resize drive when requested
-if [ -d /home/debian/.resizerootfs ] ; then
+if [ -d /home/.resizerootfs ] ; then
 	ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
 
   	PART_NUM=${ROOT_PART#mmcblk0p}
@@ -125,8 +125,25 @@ EOF
   chmod +x /etc/init.d/resize2fs_once &&
   update-rc.d resize2fs_once defaults &&
   echo "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
-  rmdir /home/debian/.resizerootfs
+  rmdir /home/.resizerootfs
+  mkdir /boot/dtbs/
+  mkdir /boot/dtbs/overlays
   systemctl reboot
+fi
+
+unset REBOOT
+if [ -n "`find /boot/dtbs/ -maxdepth 1 -name '*.dtb'`" ] ; then
+	sudo mv /boot/dtbs/*.dtb /usr/lib/linux-image-$(uname -r)
+	REBOOT=1
+fi
+
+if [ -n "`find /boot/dtbs/overlays -maxdepth 1 -name '*.dtbo'`" ] ; then
+	sudo mv /boot/dtbs/overlays/*.dtbo /usr/lib/linux-image-$(uname -r)/overlays
+	REBOOT=1
+fi
+
+if [ "x${REBOOT}" = "x1" ] ; then
+	systemctl reboot
 fi
 
 if [ -d /sys/class/gpio/ ] ; then
