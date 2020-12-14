@@ -159,14 +159,11 @@ prepare_environment() {
 	echo_broadcast "==> Determining root drive"
 	find_root_drive
 	echo_broadcast "====> Root drive identified at [${root_drive}]"
-	boot_drive=${root_drive%?}1
+	boot_drive="ubi0:uboot"
 	echo_broadcast "==> Boot Drive [${boot_drive}]"
 	echo_broadcast "==> Figuring out Source and Destination devices"
-	if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
-		source="/dev/mmcblk0"
-		destination="/dev/mmcblk1"
-	elif [ "x${boot_drive}" = "x/dev/mmcblk1p1" ] ; then
-		source="/dev/mmcblk1"
+	if [ "x${boot_drive}" = "xubi0:uboot" ] ; then
+		source="/dev/mtdblock0"
 		destination="/dev/mmcblk0"
 	else
 		echo_broadcast "!!! Could not reliably determine Source and Destination"
@@ -184,81 +181,9 @@ prepare_environment() {
 		echo_broadcast "====> Machine is compatible with BeagleBone Black"
 	fi
 
-	if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-		echo_broadcast "====> The Boot and Root drives are identified to be different."
-		echo_broadcast "====> Giving system time to stablize..."
-		countdown 5
-		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
-		if [ ! -d /boot/uboot ] ; then
-			echo_broadcast "====> Directory /boot/uboot unexist, create it"
-			mkdir -p /boot/uboot
-		fi
-		mount ${boot_drive} /boot/uboot -o ro || try_vfat
-	fi
-
 	generate_line 80 '='
 }
 
-prepare_environment_reverse() {
-  generate_line 80 '='
-  echo_broadcast "Prepare environment for flashing"
-  start_time=$(date +%s)
-  echo_broadcast "Starting at $(date --date="@$start_time")"
-  generate_line 40
-
-	value_min_free_kbytes=$(sysctl -n vm.min_free_kbytes)
-	echo_broadcast "==> sysctl: vm.min_free_kbytes=[${value_min_free_kbytes}]"
-	echo_broadcast "==> sysctl: setting: [sysctl -w vm.min_free_kbytes=16384]"
-	sysctl -w vm.min_free_kbytes=16384
-	generate_line 40
-
-#  echo_broadcast "==> Preparing /tmp"
-#  mount -t tmpfs tmpfs /tmp
-  echo_broadcast "==> Determining root drive"
-  find_root_drive
-  echo_broadcast "====> Root drive identified at ${root_drive}"
-  echo_broadcast "==> Determining boot drive"
-  boot_drive="${root_drive%?}1"
-#  if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-#    echo_broadcast "====> The Boot and Root drives are identified to be different."
-#    echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
-#    mount ${boot_drive} /boot/uboot -o ro
-#  fi
-  echo_broadcast "==> Figuring out Source and Destination devices"
-  if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
-    source="/dev/mmcblk0"
-    destination="/dev/mmcblk1"
-  elif [ "x${boot_drive}" = "x/dev/mmcblk1p1" ] ; then
-    source="/dev/mmcblk1"
-    destination="/dev/mmcblk0"
-  else
-    echo_broadcast "!!! Could not reliably determine Source and Destination"
-    echo_broadcast "!!! We need to stop here"
-    teardown_environment_reverse
-    write_failure
-    exit 2
-  fi
-  echo_broadcast "====> Source identified: [${source}]"
-  echo_broadcast "====> Destination identified: [${destination}]"
-
-  echo_broadcast "====> Unmounting auto-mounted partitions"
-
-NUM_MOUNTS=$(mount | grep -v none | grep "${destination}" | wc -l)
-
-i=0 ; while test $i -le ${NUM_MOUNTS} ; do
-	DRIVE=$(mount | grep -v none | grep "${destination}" | tail -1 | awk '{print $1}')
-	umount ${DRIVE} >/dev/null 2>&1 || true
-	i=$(($i+1))
-done
-
-  echo_broadcast "==> Figuring out machine"
-  get_device
-  echo_broadcast "====> Machine is ${machine}"
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    echo_broadcast "====> Machine is compatible with BeagleBone Black"
-  fi
-  generate_line 80 '='
-}
 
 teardown_environment() {
   generate_line 80 '='
@@ -316,6 +241,7 @@ end_script() {
     generate_line 80
     empty_line
     generate_line 80 '='
+
     echo_broadcast "SD has been flashed!"
     generate_line 80 '='
     sudo led_demo &
@@ -860,12 +786,12 @@ _copy_boot() {
 	fi
 
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/uboot/MLO ] ; then
-		echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_boot_dir}"
+		echo_broadcast "==> rsync: /boot/ -> ${tmp_boot_dir}"
 		get_rsync_options
-		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
-		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
+		rsync -aAxv $rsync_options /boot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
+		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uEnv.txt ] ; then
 			echo_broadcast "==> Found uEnv.txt in boot partition, copying"
-			cp -v /boot/uboot/uEnv.txt ${tmp_boot_dir}/
+			cp -v /boot/uEnv.txt ${tmp_boot_dir}/
 		fi
 		flush_cache
 		empty_line

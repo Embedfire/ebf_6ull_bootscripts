@@ -9,10 +9,6 @@ if [ ! -f /boot/vmlinuz-$(uname -r) ]; then
 	echo "error:fire kernel no exit!"
 else
 	cp -rf /boot /tmp	
-
-	rm /boot/*-$(uname -r)
-
-	rm -rf /boot/dtbs
 	
 	_do apt update -y
 	
