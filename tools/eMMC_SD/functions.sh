@@ -127,8 +127,8 @@ mmc_mount_fail() {
 }
 
 try_vfat() {
-	echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot (trying vfat)"
-	mount -t vfat ${boot_drive} /boot/uboot/ -o ro || mmc_mount_fail
+	echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot (trying vfat)"
+	mount -t vfat ${boot_drive} /boot/ -o ro || mmc_mount_fail
 }
 
 prepare_environment() {
@@ -188,12 +188,12 @@ prepare_environment() {
 		echo_broadcast "====> The Boot and Root drives are identified to be different."
 		echo_broadcast "====> Giving system time to stablize..."
 		countdown 5
-		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
-		if [ ! -d /boot/uboot ] ; then
-			echo_broadcast "====> Directory /boot/uboot unexist, create it"
-			mkdir -p /boot/uboot
+		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot"
+		if [ ! -d /boot ] ; then
+			echo_broadcast "====> Directory /boot unexist, create it"
+			mkdir -p /boot
 		fi
-		mount ${boot_drive} /boot/uboot -o ro || try_vfat
+		mount ${boot_drive} /boot -o ro || try_vfat
 	fi
 
 	generate_line 80 '='
@@ -221,8 +221,8 @@ prepare_environment_reverse() {
   boot_drive="${root_drive%?}1"
 #  if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
 #    echo_broadcast "====> The Boot and Root drives are identified to be different."
-#    echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
-#    mount ${boot_drive} /boot/uboot -o ro
+#    echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot"
+#    mount ${boot_drive} /boot -o ro
 #  fi
   echo_broadcast "==> Figuring out Source and Destination devices"
   if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
@@ -266,11 +266,11 @@ teardown_environment() {
   echo_broadcast "==> Unmounting /tmp"
   flush_cache
   umount /tmp || true
-  if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-    echo_broadcast "==> Unmounting /boot"
-    flush_cache
-    umount /boot/uboot || true
-  fi
+#  if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
+#    echo_broadcast "==> Unmounting /boot"
+#    flush_cache
+#    umount /boot || true
+#  fi
   reset_leds 'none'
 
   echo_broadcast "==> Force writeback of eMMC buffers by Syncing: ${destination}"
@@ -318,7 +318,16 @@ end_script() {
     generate_line 80 '='
     echo_broadcast "SD has been flashed!"
     generate_line 80 '='
-    sudo led_demo &
+
+    flush_cache
+    unset are_we_flasher
+    are_we_flasher=$(grep init-eMMC-flasher /proc/cmdline || true)
+    if [ ! "x${are_we_flasher}" = "x" ] ; then
+      echo_broadcast "We are init"
+      #When run as init
+      sudo led_demo >/dev/null &
+      exit #We should not hit that
+    fi
   fi
 }
 
@@ -647,8 +656,8 @@ check_running_system_initrd() {
 	#Needed for: debian-7.5-2014-05-14
 	if [ ! -f /boot/vmlinuz-$(uname -r) ] ; then
 		echo_broadcast "==> updating: /boot/vmlinuz-$(uname -r) (old image)"
-		if [ -f /boot/uboot/zImage ] ; then
-			cp -v /boot/uboot/zImage /boot/vmlinuz-$(uname -r)
+		if [ -f /boot/zImage ] ; then
+			cp -v /boot/zImage /boot/vmlinuz-$(uname -r)
 		else
 			echo_broadcast "!==> Error: [/boot/vmlinuz-$(uname -r)] does not exist"
 			write_failure
@@ -667,9 +676,9 @@ check_running_system_initrd() {
 
 	#Needed for: debian-7.5-2014-05-14
 	if [ ! -d /boot/dtbs/$(uname -r)/ ] ; then
-		if [ -d /boot/uboot/dtbs/ ] ; then
+		if [ -d /boot/dtbs/ ] ; then
 			mkdir -p /boot/dtbs/$(uname -r) || true
-			cp -v /boot/uboot/dtbs/* /boot/dtbs/$(uname -r)/
+			cp -v /boot/dtbs/* /boot/dtbs/$(uname -r)/
 		else
 			echo_broadcast "!==> Error: [/boot/dtbs/$(uname -r)/] does not exist"
 			write_failure
@@ -848,24 +857,24 @@ _copy_boot() {
 
 	#rcn-ee: Currently the MLO/u-boot.img are dd'ed to MBR by default, this is just for VERY old rootfs (aka, DO NOT USE)
 	if [ ! -f /opt/backup/uboot/MLO ] ; then
-		if [ -f /boot/uboot/MLO ] && [ -f /boot/uboot/u-boot.img ] ; then
-			echo_broadcast "==> Found MLO and u-boot.img in current /boot/uboot/, copying"
+		if [ -f /boot/MLO ] && [ -f /boot/u-boot.img ] ; then
+			echo_broadcast "==> Found MLO and u-boot.img in current /boot/, copying"
 			#Make sure the BootLoader gets copied first:
-			cp -v /boot/uboot/MLO ${tmp_boot_dir}/MLO || write_failure
+			cp -v /boot/MLO ${tmp_boot_dir}/MLO || write_failure
 			flush_cache
 
-			cp -v /boot/uboot/u-boot.img ${tmp_boot_dir}/u-boot.img || write_failure
+			cp -v /boot/u-boot.img ${tmp_boot_dir}/u-boot.img || write_failure
 			flush_cache
 		fi
 	fi
 
-	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/uboot/MLO ] ; then
-		echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_boot_dir}"
+	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/MLO ] ; then
+		echo_broadcast "==> rsync: /boot/ -> ${tmp_boot_dir}"
 		get_rsync_options
-		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
-		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
+		rsync -aAxv $rsync_options /boot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
+		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uEnv.txt ] ; then
 			echo_broadcast "==> Found uEnv.txt in boot partition, copying"
-			cp -v /boot/uboot/uEnv.txt ${tmp_boot_dir}/
+			cp -v /boot/uEnv.txt ${tmp_boot_dir}/
 		fi
 		flush_cache
 		empty_line
@@ -1120,7 +1129,7 @@ loading_soc_defaults() {
 		echo_broadcast "==> Loaded"
 	else
 		#Needed for: debian-7.5-2014-05-14
-		local soc_file="/boot/uboot/SOC.sh"
+		local soc_file="/boot/SOC.sh"
 		if [ -f ${soc_file} ] ; then
 			generate_line 40
 			echo_broadcast "==> Loading ${soc_file}"
@@ -1475,7 +1484,7 @@ prepare_drive_reverse() {
 startup_message(){
   clear
   generate_line 80 '='
-  echo_broadcast "Starting eMMC Flasher from microSD media"
+  echo_broadcast "Starting microSD Flasher from eMMC media"
   echo_broadcast "Version: [${version_message}]"
   generate_line 80 '='
   empty_line

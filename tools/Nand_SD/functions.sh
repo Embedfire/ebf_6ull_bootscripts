@@ -244,7 +244,7 @@ end_script() {
 
     echo_broadcast "SD has been flashed!"
     generate_line 80 '='
-    sudo led_demo &
+    sudo led_demo >/dev/null &
   fi
 }
 
@@ -1401,7 +1401,7 @@ prepare_drive_reverse() {
 startup_message(){
   clear
   generate_line 80 '='
-  echo_broadcast "Starting eMMC Flasher from microSD media"
+  echo_broadcast "Starting microSD Flasher from  eMMC media"
   echo_broadcast "Version: [${version_message}]"
   generate_line 80 '='
   empty_line
