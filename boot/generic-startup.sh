@@ -189,6 +189,9 @@ if [ -f /proc/device-tree/model ] ; then
 	Embedfire_i\.MX6ULL_Board)
 		script="imx6ull_fire.sh"
 		;;
+	STM32MP157_Star)
+		script="stm32mp157_fire.sh"
+		;;
 	*)
 		script="generic.sh"
 		;;
