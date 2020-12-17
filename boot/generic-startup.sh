@@ -1,5 +1,5 @@
 #!/bin/sh -e
-
+. /boot/SOC.sh
 #eMMC flasher just exited single user mode via: [exec /sbin/init]
 #as we can't shudown properly in single user mode..
 unset are_we_flasher
@@ -62,24 +62,26 @@ fi
 
 #Resize drive when requested
 if [ -d /home/.resizerootfs ] ; then
+	ROOT_DEV=${conf_root_device#/dev/}
+
 	ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
 
-  	PART_NUM=${ROOT_PART#mmcblk0p}
+  	PART_NUM=${ROOT_PART#${ROOT_DEV}p}
   if [ "$PART_NUM" = "$ROOT_PART" ]; then
 	echo "$ROOT_PART is not an SD card. Don't expand"	
   fi
 
-  LAST_PART_NUM=$(parted /dev/mmcblk0 -ms unit s p | tail -n 1 | cut -f 1 -d:)
+  LAST_PART_NUM=$(parted /dev/${ROOT_DEV} -ms unit s p | tail -n 1 | cut -f 1 -d:)
   if [ $LAST_PART_NUM -ne $PART_NUM ]; then
     echo "$ROOT_PART is not the last partition. Don't know how to expand"
   fi
 
   # Get the starting offset of the root partition
-  PART_START=$(parted /dev/mmcblk0 -ms unit s p | grep "^${PART_NUM}" | cut -f 2 -d: | sed 's/[^0-9]//g')
+  PART_START=$(parted /dev/${ROOT_DEV} -ms unit s p | grep "^${PART_NUM}" | cut -f 2 -d: | sed 's/[^0-9]//g')
   [ "$PART_START" ] || return 1
   # Return value will likely be error for fdisk as it fails to reload the
   # partition table because the root fs is mounted
-  fdisk /dev/mmcblk0 <<EOF
+  fdisk /dev/${ROOT_DEV} <<EOF
 p
 d
 $PART_NUM
