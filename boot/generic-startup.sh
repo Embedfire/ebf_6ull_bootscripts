@@ -61,7 +61,7 @@ if [ -f /boot/efi/EFI/efi.gen ] ; then
 fi
 
 #Resize drive when requested
-if [ -d /home/.resizerootfs ] ; then
+if [ -d /home/debian/.resizerootfs ] ; then
 	ROOT_DEV=${conf_root_device#/dev/}
 
 	ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
