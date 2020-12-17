@@ -127,7 +127,7 @@ EOF
   chmod +x /etc/init.d/resize2fs_once &&
   update-rc.d resize2fs_once defaults &&
   echo "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
-  rmdir /home/.resizerootfs
+  rmdir /home/debian/.resizerootfs
   mkdir /boot/dtbs/
   mkdir /boot/dtbs/overlays
   systemctl reboot
