@@ -159,7 +159,8 @@ prepare_environment() {
 	echo_broadcast "==> Determining root drive"
 	find_root_drive
 	echo_broadcast "====> Root drive identified at [${root_drive}]"
-	boot_drive=${root_drive%?}1
+	#boot_drive=${root_drive%?}1
+	find_boot_drive
 	echo_broadcast "==> Boot Drive [${boot_drive}]"
 	echo_broadcast "==> Figuring out Source and Destination devices"
 	if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
@@ -347,6 +348,15 @@ find_root_drive(){
 		root_drive=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)
 
 		echo_broadcast "==> root_drive=[${root_drive}]"
+}
+
+find_boot_drive(){
+	unset root_drive
+	generate_line 40
+
+	boot_drive=$(mount | sed -n 's|^/dev/\(.*\) on /boot .*|\1|p')
+
+	echo_broadcast "==> boot_drive=[${boot_drive}]"
 }
 
 flush_cache() {
