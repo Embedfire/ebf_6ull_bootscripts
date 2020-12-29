@@ -1520,3 +1520,47 @@ activate_cylon_leds() {
   fi
 }
 
+
+unset FLASHLAYOUT_data
+unset FLASHLAYOUT_filename
+unset FLASHLAYOUT_rawname
+unset FLASHLAYOUT_filename_path
+unset FLASHLAYOUT_prefix_image_path
+unset FLASHLAYOUT_number_of_line
+
+declare -A FLASHLAYOUT_data
+
+# Columns name on FLASHLAYOUT_data
+COL_PARTID=0
+COL_PARTNAME=1
+COL_OFFSET=2
+COL_BIN2FLASH=3
+
+# Read Flash Layout file and put information on array: FLASHLAYOUT_data
+function read_flash_layout() {
+	local i=0
+	declare -a flashlayout_data     # Create an indexed array (necessary for the read command).
+	FLASHLAYOUT_number_of_line=$(wc -l "$FLASHLAYOUT_filename" | cut -sf 1 -d ' ')
+	echo_broadcast "Number of line: $FLASHLAYOUT_number_of_line"
+	while read -ra flashlayout_data; do
+		if [ true ];
+		then
+			# PartId
+			FLASHLAYOUT_data[$i,$COL_PARTID]=${flashlayout_data[0]}
+			#PartName
+			FLASHLAYOUT_data[$i,$COL_PARTNAME]=${flashlayout_data[1]}
+			#Offset
+			FLASHLAYOUT_data[$i,$COL_OFFSET]=${flashlayout_data[2]}
+			#Bin2flash
+			FLASHLAYOUT_data[$i,$COL_BIN2FLASH]=${flashlayout_data[3]}
+
+			i=$(($i+1))
+
+			echo_broadcast "READ: ${flashlayout_data[0]} ${flashlayout_data[1]} ${flashlayout_data[2]} ${flashlayout_data[3]} ..."
+		fi
+	done < "$FLASHLAYOUT_filename"
+
+	FLASHLAYOUT_number_of_line=$i
+}
+
+
