@@ -39,6 +39,6 @@ fi
 
 mount -t exfat $DEV $tmp_rootfs_dir
 
-tar -cvf /mnt/rootfs.tar --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/boot} /*
+tar -cvf ${tmp_rootfs_dir}/rootfs.tar --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/boot} /*
 
 echo "roofs backup finished!!"
