@@ -383,7 +383,7 @@ find_boot_drive(){
 	unset root_drive
 	generate_line 40
 
-	boot_drive=/dev/$(mount | sed -n 's|^/dev/\(.*\) on /boot .*|\1|p')
+	boot_drive=$(cat /etc/fstab  | grep boot | awk '{print $1}')
 
 	echo_broadcast "==> boot_drive=[${boot_drive}]"
 }
