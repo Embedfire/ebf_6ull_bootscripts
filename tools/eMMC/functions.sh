@@ -13,6 +13,19 @@ emmcscript="flash_firmware=enable"
 http_spl="MLO-am335x_evm-v2018.09-r7"
 http_uboot="u-boot-am335x_evm-v2018.09-r7.img"
 
+COL_PARTNAME=0
+COL_DEV=1
+COL_TYPE=2
+COL_OFFSET=3
+COL_BIN2FLASH=4
+
+FLASHLAYOUT_number_of_line=0 
+
+declare -A FLASHLAYOUT_data
+
+# Size of 1.5GB
+DEFAULT_RAW_SIZE=1536
+
 set -o errtrace
 
 trap _exit_trap EXIT
@@ -812,32 +825,71 @@ _build_uboot_dd_options() {
   echo_broadcast "===> Will use : $dd_uboot"
 }
 
+
+_activated_boot_partition() {
+	if [[ $1 =~ "boot" ]];then
+		echo $2 > /sys/block/${1#/dev/}/force_ro
+	fi;
+}
+
+_deactivated_boot_partition() {
+	_activated_boot_partition $1 $2
+}
+
 _dd_bootloader() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Writing bootloader to [${destination}]"
-  generate_line 40
+	empty_line
+	generate_line 80 '='
+#  echo_broadcast "Writing bootloader to [${destination}]"
+#  generate_line 40
 
-  if [ "x${bootloader_location}" = "xdd_spl_uboot_boot" ] ; then
-    _build_uboot_spl_dd_options
+#  if [ "x${bootloader_location}" = "xdd_spl_uboot_boot" ] ; then
+#    _build_uboot_spl_dd_options
 
-    echo_broadcast "==> Copying SPL U-Boot with dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}"
-    generate_line 60
-    dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}
-    generate_line 60
-  fi
+#   echo_broadcast "==> Copying SPL U-Boot with dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}"
+#    generate_line 60
+#    dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}
+#    generate_line 60
+#  fi
 
-  _build_uboot_dd_options
+#  _build_uboot_dd_options
 
-  echo_broadcast "==> Copying U-Boot with dd if=${dd_uboot_emmc_backup} of=${destination} ${dd_uboot}"
-  generate_line 60
-  echo 0 > /sys/block/${destination#/dev/}boot0/force_ro
-  dd if=${dd_uboot_emmc_backup} of=${destination}boot0 ${dd_uboot} conv=notrunc
-  echo 1 > /sys/block/${destination#/dev/}boot0/force_ro
-  mmc bootpart enable 1 1 ${destination}
-  generate_line 60
-  echo_broadcast "Writing bootloader completed"
-  generate_line 80 '='
+#  echo_broadcast "==> Copying U-Boot with dd if=${dd_uboot_emmc_backup} of=${destination} ${dd_uboot}"
+#  generate_line 60
+#  echo 0 > /sys/block/${destination#/dev/}boot0/force_ro
+#  dd if=${dd_uboot_emmc_backup} of=${destination}boot0 ${dd_uboot} conv=notrunc
+#  echo 1 > /sys/block/${destination#/dev/}boot0/force_ro
+#  mmc bootpart enable 1 1 ${destination}
+#  generate_line 60
+#  echo_broadcast "Writing bootloader completed"
+#  generate_line 80 '='
+
+	for ((i=0;i<FLASHLAYOUT_number_of_line;i++))
+	do
+		dd_uboot=" "
+		partName=${FLASHLAYOUT_data[$i,$COL_PARTNAME]}
+		dev=${FLASHLAYOUT_data[$i,$COL_DEV]}
+		type=${FLASHLAYOUT_data[$i,$COL_TYPE]}
+		offset=${FLASHLAYOUT_data[$i,$COL_OFFSET]}
+		bin2flash=${FLASHLAYOUT_data[$i,$COL_BIN2FLASH]}	
+		if [[ ${partName} =~ "bl" ]]; then
+			echo_broadcast "Writing ${partName} to [${dev}]"
+			generate_line 40
+			if [ ! $offset = "x" ] && [ $type = "bin" ] ;then
+				dd_uboot="seek=1 bs=$offset"
+			fi			
+			_activated_boot_partition ${dev} 0
+			echo_broadcast "==> Copying SPL U-Boot with dd if=${bin2flash} of=${dev} ${dd_uboot}"
+			dd if=${bin2flash} of=${dev} conv=fdatasync,notrunc ${dd_uboot}
+			_deactivated_boot_partition ${dev} 1
+
+			generate_line 60
+			echo_broadcast "==> Writing ${partName} completed"	
+			generate_line 60				
+		else
+			continue;
+		fi
+	done;
+	generate_line 80 '='
 }
 
 _format_boot() {
@@ -875,7 +927,7 @@ _format_root_btrfs() {
 _copy_boot() {
 	empty_line
 	generate_line 80 '='
-	echo_broadcast "Copying boot: ${source}p1 -> ${boot_partition}"
+	echo_broadcast "Copying boot: ${source} -> ${boot_partition}"
 
 	#rcn-ee: Currently the MLO/u-boot.img are dd'ed to MBR by default, this is just for VERY old rootfs (aka, DO NOT USE)
 	if [ ! -f /opt/backup/uboot/MLO ] ; then
@@ -891,7 +943,7 @@ _copy_boot() {
 	fi
 
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/uboot/MLO ] ; then
-		echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_boot_dir}"
+		echo_broadcast "==> rsync $rsync_options /boot/uboot/ -> ${tmp_boot_dir}"
 		get_rsync_options
 		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
 		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
@@ -1026,7 +1078,7 @@ _copy_rootfs() {
   echo_broadcast "==> rsync: / -> ${tmp_rootfs_dir}"
   generate_line 40
   get_rsync_options
-  rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
+  rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/boot/*,/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
   flush_cache
   generate_line 40
   echo_broadcast "==> Copying: Kernel modules"
@@ -1465,43 +1517,7 @@ prepare_drive() {
   end_script
 }
 
-prepare_drive_reverse() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Preparing drives"
-  erasing_drive ${destination}
-  loading_soc_defaults
 
-  get_ext4_options
-
-  _dd_bootloader
-
-  boot_partition=
-  rootfs_partition=
-  partition_device
-
-  if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
-    tmp_boot_dir="/tmp/boot"
-    _prepare_future_boot
-    _copy_boot
-    _teardown_future_boot
-
-    tmp_rootfs_dir="/tmp/rootfs"
-    _prepare_future_rootfs
-    media_rootfs="2"
-    _copy_rootfs_reverse
-    _teardown_future_rootfs
-  else
-    rootfs_label=${boot_label}
-    tmp_rootfs_dir="/tmp/rootfs"
-    _prepare_future_rootfs
-    media_rootfs="1"
-    _copy_rootfs_reverse
-    _teardown_future_rootfs
-  fi
-  teardown_environment_reverse
-  end_script
-}
 
 startup_message(){
   clear
@@ -1520,47 +1536,321 @@ activate_cylon_leds() {
   fi
 }
 
+function debug_dump_flashlayout_data_array() {
+	columns=5
+	for ((i=0;i<8;i++)) do
+		for ((j=0;j<columns;j++)) do
+			echo -n " ${FLASHLAYOUT_data[$i,$j]}"
+		done
+		echo ""
+	done
+}
 
-unset FLASHLAYOUT_data
-unset FLASHLAYOUT_filename
-unset FLASHLAYOUT_rawname
-unset FLASHLAYOUT_filename_path
-unset FLASHLAYOUT_prefix_image_path
-unset FLASHLAYOUT_number_of_line
-
-declare -A FLASHLAYOUT_data
-
-# Columns name on FLASHLAYOUT_data
-COL_PARTID=0
-COL_PARTNAME=1
-COL_OFFSET=2
-COL_BIN2FLASH=3
-
-# Read Flash Layout file and put information on array: FLASHLAYOUT_data
-function read_flash_layout() {
-	local i=0
-	declare -a flashlayout_data     # Create an indexed array (necessary for the read command).
-	FLASHLAYOUT_number_of_line=$(wc -l "$FLASHLAYOUT_filename" | cut -sf 1 -d ' ')
-	echo_broadcast "Number of line: $FLASHLAYOUT_number_of_line"
-	while read -ra flashlayout_data; do
-		if [ true ];
+function calculate_number_of_partition() {
+	num=0
+	for ((i=0;i<FLASHLAYOUT_number_of_line;i++))
+	do
+		type=${FLASHLAYOUT_data[$i,$COL_TYPE]}
+		#ip=${FLASHLAYOUT_data[$i,$COL_IP]}
+		if [ true ]
 		then
-			# PartId
-			FLASHLAYOUT_data[$i,$COL_PARTID]=${flashlayout_data[0]}
-			#PartName
-			FLASHLAYOUT_data[$i,$COL_PARTNAME]=${flashlayout_data[1]}
-			#Offset
-			FLASHLAYOUT_data[$i,$COL_OFFSET]=${flashlayout_data[2]}
-			#Bin2flash
-			FLASHLAYOUT_data[$i,$COL_BIN2FLASH]=${flashlayout_data[3]}
-
-			i=$(($i+1))
-
-			echo_broadcast "READ: ${flashlayout_data[0]} ${flashlayout_data[1]} ${flashlayout_data[2]} ${flashlayout_data[3]} ..."
+			if [ "$type" != "bin" ];
+			then
+				num=$(($num+1))
+			fi
 		fi
-	done < "$FLASHLAYOUT_filename"
+	done
 
-	FLASHLAYOUT_number_of_line=$i
+	echo "$num"
+}
+
+# ----------------------------------------
+# move_partition_offset <begin_index_to_change> <new offset_b>
+function move_partition_offset() {
+	ind=$1
+	new_offset=$2
+	offset_hexa=$(printf "%x\n" $new_offset)
+
+	for ((k=$ind;k<FLASHLAYOUT_number_of_line;k++))
+	do
+
+
+		if [ true ]
+		then
+			if [ true ] ;
+			then
+				#calculate actual size of partition (before update)
+				# in case of last partition, we doesn't take care of tmp_next_offset
+				# because there is no other partition to move.
+				tmp_next_offset=${FLASHLAYOUT_data[$(($k+1)),$COL_OFFSET]}
+				tmp_cur_offset=${FLASHLAYOUT_data[$k,$COL_OFFSET]}
+				tmp_partition_size=$(($tmp_next_offset - $tmp_cur_offset))
+
+				#set new offset
+				offset_hexa=$(printf "0x%x\n" $new_offset)
+
+				echo "${FLASHLAYOUT_data[$k,$COL_PARTNAME]}: Change Offset from ${FLASHLAYOUT_data[$k,$COL_OFFSET]}" \
+					" to $offset_hexa"
+				FLASHLAYOUT_data[$k,$COL_OFFSET]=$offset_hexa
+
+				#calculate offset of next partition
+				new_offset=$(($new_offset + $tmp_partition_size))
+			fi
+		fi
+	done
+}
+
+function read_flashlayout() {
+	local i=0;
+	echo " debug : ${1}"
+	for layout in ${1}; do
+		#PartName
+		FLASHLAYOUT_data[$i,$COL_PARTNAME]=$(echo $layout | cut -d',' -f1);
+		#COL_DEV
+		FLASHLAYOUT_data[$i,$COL_DEV]=$(echo $layout | cut -d',' -f2);
+        #COL_TYPE
+        FLASHLAYOUT_data[$i,$COL_TYPE]=$(echo $layout | cut -d',' -f3) ;
+		#Offset
+		FLASHLAYOUT_data[$i,$COL_OFFSET]=$(echo $layout | cut -d',' -f4) ;
+		#Bin2flash
+		FLASHLAYOUT_data[$i,$COL_BIN2FLASH]=$(echo $layout | cut -d',' -f5) ;
+
+        i=$(($i+1))
+	done
+    FLASHLAYOUT_number_of_line=$i
 }
 
 
+function generate_gpt_partition_table_from_flash_layout() {
+	local j=1
+	local p=0
+	local index_of_rootfs=20
+	new_next_partition_offset_b=0
+ 
+	number_of_partition=$( calculate_number_of_partition )
+	#sgdisk -og -a 1 $FLASHLAYOUT_rawname
+
+ 	parted ${destination} mklabel gpt << __EOF__
+	yes
+__EOF__
+
+	for ((i=0;i<FLASHLAYOUT_number_of_line;i++))
+	do
+		partName=${FLASHLAYOUT_data[$i,$COL_PARTNAME]}
+		type=${FLASHLAYOUT_data[$i,$COL_TYPE]}
+		offset=${FLASHLAYOUT_data[$i,$COL_OFFSET]}
+		bin2flash=${FLASHLAYOUT_data[$i,$COL_BIN2FLASH]}
+		echo "DUMP Process for $partName partition $p $number_of_partition"
+        # don't need to part if the type of the partion is bin
+		if [ "$type" == "bin" ]; then
+			continue;
+		fi
+
+		# get size of image to put on partition
+		if [ -n "$bin2flash" ];
+		then
+			if [ -e $bin2flash ];
+			then
+				image_size=$(du -Lb $FLASHLAYOUT_prefix_image_path/$bin2flash | tr '\t' ' ' | cut -d ' ' -f1)
+				image_size_in_mb=$((image_size/1024/1024))
+			else
+				image_size=0
+				image_size_in_mb=0
+			fi
+		else
+			image_size=0
+			image_size_in_mb=0
+		fi
+
+		# get offset
+		offset=$(echo $offset | sed -e "s/0x//")
+		offset_b=$(echo $((16#$offset)) )
+
+		offset=$((2 * $offset_b / 1024))
+		
+		if [ $p -ne $(($number_of_partition - 0)) ];
+		then
+			# get the begin offset of next partition
+			next_offset=${FLASHLAYOUT_data[$(($i+1)),$COL_OFFSET]}
+			next_offset=$(echo $next_offset | sed -e "s/0x//")
+			next_offset_b=$(echo $((16#$next_offset)))
+			echo "debug ::: $partName $next_offset"
+			if [ "$partName" == "rootfs" ];
+			then
+  				rootfs_partition=${FLASHLAYOUT_data[$i,$COL_DEV]}
+				#force the size of rootfs parition to 768MB
+				new_next_partition_offset_b=$(($offset_b + 1024*768432))
+				next_offset_b=$new_next_partition_offset_b
+
+				move_partition_offset $(($i+1)) $new_next_partition_offset_b
+				index_of_rootfs=$i
+			fi
+
+			if [ $i -gt $index_of_rootfs ];
+			then
+				if [ $(($next_offset_b + $image_size)) -gt $(($DEFAULT_RAW_SIZE * 1024*1024)) ]
+				then
+					echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+					echo "[ERROR]: The rootfs and/or other partitions doesn't enter on a SDCARD size of $DEFAULT_RAW_SIZE MB"
+					echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+					return 1
+				fi
+			fi
+			next_offset=$((2 * $next_offset_b / 1024))
+			next_offset=$(($next_offset -1))
+			
+			if [ $next_offset -eq -1 ];
+			then
+				next_offset=" "
+				next_offset_b="0"
+			fi
+		else
+			next_offset=" "
+			next_offset_b="0"
+		fi
+
+		# calculate the size of partition
+		partition_size=$(($next_offset_b - $offset_b))
+		if [ $partition_size -lt 0 ];
+		then
+			partition_size=0
+		fi
+
+		if [ $i -ne $(($FLASHLAYOUT_number_of_line -1)) ];
+		then
+			free_size=$(($partition_size - $image_size))
+		else
+			free_size=0
+			partition_size=0
+		fi
+
+		if [ true ];
+		then
+			echo "   DUMP selected  $selected"
+			#echo "   DUMP partId    $partId"
+			echo "   DUMP partName  $partName"
+			#echo "   DUMP partType  $partType"
+			#echo "   DUMP ip        $ip"
+			echo "   DUMP offset    ${FLASHLAYOUT_data[$i,$COL_OFFSET]} ($offset)"
+			echo "   Debug next_offset $next_offset"
+			echo "   DUMP image size     $image_size"
+			echo "   DUMP partition size $partition_size"
+			echo "   DUMP free size      $free_size "
+			if [ true ];
+			then
+				if [ $free_size -lt 0 ];
+				then
+					if [ "$partName" == "rootfs" ];
+					then
+						echo "[WARNING]: IMAGE TOO BIG [$partName:$bin2flash $image_size B [requested $partition_size B]"
+						echo "[WARNING]: try to move last partition"
+						# rootfs are too big for the partition, we increase the size of
+						# partition of real rootfs image size + DEFAULT_PADDING_SIZE
+						new_next_partition_offset_b=$(($offset_b + $image_size + $DEFAULT_PADDING_SIZE))
+
+						move_partition_offset $(($i+1)) $new_next_partition_offset_b
+
+						if [ $new_next_partition_offset_b -gt $(($DEFAULT_RAW_SIZE * 1024*1024)) ]
+						then
+							echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+							echo "[ERROR]: IMAGE TOO BIG [$partName:$bin2flash $image_size_in_mb MB [requested $partition_size B]"
+							echo "[ERROR]: IMAGE + OFFSET of rootfs partition are superior of SDCARD size ($DEFAULT_RAW_SIZE)"
+							echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+							return 1
+						fi
+						next_offset=$((2 * $new_next_partition_offset_b / 1024))
+						next_offset=$(($next_offset -1))
+					else
+						echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						echo "[ERROR]: IMAGE TOO BIG [$partName:$bin2flash $image_size_in_mb MB [requested $partition_size B]"
+						echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						return 1
+					fi
+				fi
+
+				if [ $p -eq $(($number_of_partition -1)) ];
+				then
+					temp_end_offset_b=$(($offset_b + $image_size))
+
+					if [ $temp_end_offset_b -gt $((1536 * 1024*1024)) ];
+					then
+						echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						echo "[ERROR]: IMAGE TOO BIG [$partName:$bin2flash $image_size_in_mb MB]"
+						echo "[ERROR]: There is not enough place on last partition($partName)"
+						echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+						return 1
+					fi
+				fi
+
+				printf "part %d: %8s ..." $j "$partName"
+        if [ $partName == "rootfs" ];then
+          next_offset=100%
+        else
+          next_offset=${next_offset}s
+        fi
+				#sgdisk -a 1 -n $j:$offset:$next_offset -c $j:$partName -t $j:8300 $bootfs_param $FLASHLAYOUT_rawname
+				parted ${destination} mkpart $partName ${type} ${offset}s ${next_offset} << __EOF__
+i
+__EOF__
+
+				# add boot flags on gpt parition
+				if [ "$partName" == "bootfs" ];then
+					boot_partition=${FLASHLAYOUT_data[$i,$COL_DEV]}
+					parted ${destination} set $j boot on
+				fi
+				#partition_size=$(sgdisk -p $FLASHLAYOUT_rawname | grep $partName | awk '{ print $4}')
+				#partition_size_type=$(sgdisk -p $FLASHLAYOUT_rawname | grep $partName | awk '{ print $5}')
+				#printf "\r[CREATED] part %d: %8s [partition size %s %s]\n" $j "$partName"  "$partition_size" "$partition_size_type"
+
+				: $(( j++ ))
+			fi
+		fi
+		p=$(($p+1))
+	done
+
+	echo ""
+	echo "Partition table from $FLASHLAYOUT_rawname"
+	sfdisk -l $FLASHLAYOUT_rawname
+	echo ""
+}
+
+
+prepare_drive_reverse() {
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Preparing drives"
+	erasing_drive ${destination}
+	loading_soc_defaults
+
+	get_ext4_options
+	
+	read_flashlayout "${FlashLayout}"
+
+	generate_gpt_partition_table_from_flash_layout
+
+	_dd_bootloader
+
+  if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
+    tmp_rootfs_dir="/tmp/rootfs"
+    _prepare_future_rootfs
+
+    tmp_boot_dir="/tmp/rootfs/boot"
+    _prepare_future_boot
+    _copy_boot
+
+    media_rootfs="2"
+    _copy_rootfs
+
+    _teardown_future_boot
+    _teardown_future_rootfs
+  else
+    rootfs_label=${boot_label}
+    tmp_rootfs_dir="/tmp/rootfs"
+    _prepare_future_rootfs
+    media_rootfs="1"
+    _copy_rootfs
+    _teardown_future_rootfs
+  fi
+  teardown_environment
+  end_script	
+}
