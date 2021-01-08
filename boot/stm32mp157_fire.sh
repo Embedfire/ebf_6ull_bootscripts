@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 fat_media="/lib/firmware/fatboot.img"
 boot_dir="/boot"
@@ -12,8 +12,8 @@ else
 	root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)"
 fi
 
-if [ "x${root_drive}" = "x/dev/mmcblk1p6" ] || [ "x${root_drive}" = "x/dev/mmcblk2p6" ] || [ "x${root_drive}" = "x/dev/mmcblk0p6" ]; then
-	actual_image_file="${root_drive%?}4"
+if [[ "x${root_drive}" =~ "x/dev/mmcblk" ]]; then
+	actual_image_file=/dev/$(mount | sed -n 's|^/dev/\(.*\) on /boot .*|\1|p')
 else
 	media_loop=$(losetup -f || true)
     losetup -o1M ${media_loop} "${fat_media}"
