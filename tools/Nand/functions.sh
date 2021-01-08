@@ -7,7 +7,8 @@
 
 version_message="1.20180412: all ssh regneration override..."
 #nandscript="cmdline=init=/opt/scripts/tools/Nand/$(basename $0)"
-nandscript="flash_firmware=enable"
+nandscript="flash_firmware=continued"
+oncescript="flash_firmware=once"
 #This is just a backup-backup-backup for old images...
 #https://rcn-ee.com/repos/bootloader/am335x_evm/
 fat_media=/lib/firmware/fatboot.img
@@ -197,7 +198,7 @@ prepare_environment() {
 
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
 		echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot"
-		mount ${boot_drive} /boot/uboot -o ro || try_vfat
+		mount ${boot_drive} /boot/uboot -o rw || try_vfat
 	fi
 
 	generate_line 80 '='
@@ -884,6 +885,7 @@ _copy_boot() {
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/uboot/MLO ] ; then
 		echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_boot_dir}"
 		get_rsync_options
+    sed -i -e 's:'$oncescript':#'$oncescript':g' /boot/uboot/uEnv.txt
 		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
 		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
 			echo_broadcast "==> Found uEnv.txt in boot partition, copying"
