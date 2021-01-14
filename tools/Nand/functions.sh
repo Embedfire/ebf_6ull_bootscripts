@@ -14,6 +14,17 @@ fat_media=/lib/firmware/fatboot.img
 http_spl="MLO-am335x_evm-v2018.09-r7"
 http_uboot="u-boot-am335x_evm-v2018.09-r7.img"
 
+
+COL_PARTNAME=0
+COL_DEV=1
+COL_TYPE=2
+COL_OFFSET=3
+COL_BIN2FLASH=4
+
+FLASHLAYOUT_number_of_line=0 
+partnum=1
+declare -A FLASHLAYOUT_data
+
 set -o errtrace 
 
 trap _exit_trap EXIT
@@ -21,96 +32,96 @@ trap _err_trap ERR
 _showed_traceback=f
 
 _exit_trap() {
-  local _ec="$?"
-  if [[ $_ec != 0 && "${_showed_traceback}" != t ]]; then
-    _traceback 1
-  fi
-  reset_leds 'default-on' || true
+	local _ec="$?"
+	if [[ $_ec != 0 && "${_showed_traceback}" != t ]]; then
+		_traceback 1
+	fi
+	reset_leds 'default-on' || true
 }
 
 _err_trap() {
-  local _ec="$?"
-  local _cmd="${BASH_COMMAND:-unknown}"
-  _traceback 1
-  _showed_traceback=t
-  echo "The command ${_cmd} exited with exit code ${_ec}." 1>&2
-  teardown_environment
+	local _ec="$?"
+	local _cmd="${BASH_COMMAND:-unknown}"
+	_traceback 1
+	_showed_traceback=t
+	echo "The command ${_cmd} exited with exit code ${_ec}." 1>&2
+	teardown_environment
 }
 
 _traceback() {
 
-  local -i start=$(( ${1:-0} + 1 ))
-  local -i end=${#BASH_SOURCE[@]}
-  local -i i=0
-  local -i j=0
+	local -i start=$(( ${1:-0} + 1 ))
+	local -i end=${#BASH_SOURCE[@]}
+	local -i i=0
+	local -i j=0
 
-  echo "Traceback (last called is first):" 1>&2
-  for ((i=${start}; i < ${end}; i++)); do
-    j=$(( $i - 1 ))
-    local function="${FUNCNAME[$i]}"
-    local file="${BASH_SOURCE[$i]}"
-    local line="${BASH_LINENO[$j]}"
-    echo "     ${function}() in ${file}:${line}" 1>&2
-  done
+	echo "Traceback (last called is first):" 1>&2
+	for ((i=${start}; i < ${end}; i++)); do
+		j=$(( $i - 1 ))
+		local function="${FUNCNAME[$i]}"
+		local file="${BASH_SOURCE[$i]}"
+		local line="${BASH_LINENO[$j]}"
+		echo "     ${function}() in ${file}:${line}" 1>&2
+	done
 }
 
 __dry_run__(){
-  generate_line 80 '!'
-  echo_broadcast "! WARNING: ACTIVATED DRY RUN MODE"
-  echo_broadcast "! WARNING: THE DRY RUN MODE IS NOT REALLY SAFE"
-  echo_broadcast "! WARNING: IT IS GOING TO FAIL WITH IO TO FILES"
-  echo_broadcast "! WARNING: USE AT YOUR OWN RISK"
-  generate_line 80 '!'
-  empty_line
+	generate_line 80 '!'
+	echo_broadcast "! WARNING: ACTIVATED DRY RUN MODE"
+	echo_broadcast "! WARNING: THE DRY RUN MODE IS NOT REALLY SAFE"
+	echo_broadcast "! WARNING: IT IS GOING TO FAIL WITH IO TO FILES"
+	echo_broadcast "! WARNING: USE AT YOUR OWN RISK"
+	generate_line 80 '!'
+	empty_line
 
-  dd() {
-    echo "!!! Would run 'dd' with '$@'"
-  }
-  export -f dd
-  reboot() {
-    echo "!!! Would run 'reboot' with '$@'"
-  }
-  export -f reboot
-  modprobe() {
-    echo "!!! Would run 'modprobe' with '$@'"
-  }
-  export -f modprobe
-  mkfs.vfat() {
-    echo "!!! Would run 'mkfs.vfat' with '$@'"
-  }
-  export -f mkfs.vfat
-  mkfs.ext4() {
-    echo "!!! Would run 'mkfs.ext4' with '$@'"
-  }
-  export -f mkfs.ext4
-  mkfs.btrfs() {
-    echo "!!! Would run 'mkfs.btrfs' with '$@'"
-  }
-  export -f mkfs.btrfs
-  sfdisk() {
-    echo "!!! Would run 'sfdisk' with '$@'"
-  }
-  export -f sfdisk
-  mkdir() {
-    echo "!!! Would run 'mkdir' with '$@'"
-  }
-  export -f mkdir
-  rsync() {
-    echo "!!! Would run 'rsync' with '$@'"
-  }
-  export -f rsync
-  mount() {
-    echo "!!! Would run 'mount' with '$@'"
-  }
-  export -f mount
-  umount() {
-    echo "!!! Would run 'umount' with '$@'"
-  }
-  export -f umount
-  cp() {
-    echo "!!! Would run 'cp' with '$@'"
-  }
-  export -f cp
+	dd() {
+		echo "!!! Would run 'dd' with '$@'"
+	}
+	export -f dd
+	reboot() {
+		echo "!!! Would run 'reboot' with '$@'"
+	}
+	export -f reboot
+	modprobe() {
+		echo "!!! Would run 'modprobe' with '$@'"
+	}
+	export -f modprobe
+	mkfs.vfat() {
+		echo "!!! Would run 'mkfs.vfat' with '$@'"
+	}
+	export -f mkfs.vfat
+	mkfs.ext4() {
+		echo "!!! Would run 'mkfs.ext4' with '$@'"
+	}
+	export -f mkfs.ext4
+	mkfs.btrfs() {
+		echo "!!! Would run 'mkfs.btrfs' with '$@'"
+	}
+	export -f mkfs.btrfs
+	sfdisk() {
+		echo "!!! Would run 'sfdisk' with '$@'"
+	}
+	export -f sfdisk
+	mkdir() {
+		echo "!!! Would run 'mkdir' with '$@'"
+	}
+	export -f mkdir
+	rsync() {
+		echo "!!! Would run 'rsync' with '$@'"
+	}
+	export -f rsync
+	mount() {
+		echo "!!! Would run 'mount' with '$@'"
+	}
+	export -f mount
+	umount() {
+		echo "!!! Would run 'umount' with '$@'"
+	}
+	export -f umount
+	cp() {
+		echo "!!! Would run 'cp' with '$@'"
+	}
+	export -f cp
 }
 
 mmc_mount_fail() {
@@ -142,15 +153,15 @@ prepare_environment() {
 	countdown 5
 
 	echo_broadcast "==> Preparing /tmp"
-  
+	
 	mount -t tmpfs tmpfs /tmp
 
 	echo_broadcast "==> Preparing:/sys/kernel/debug"
-   if grep -qs '/sys/kernel/debug' /proc/mounts; then
+	 if grep -qs '/sys/kernel/debug' /proc/mounts; then
 			echo_broadcast "====> debugfs alrealy mount!"
-   else
+	 else
 			mount -t debugfs debugfs /sys/kernel/debug
-   fi
+	 fi
 	
 	
 	if [ -f /proc/sys/vm/min_free_kbytes ] ; then
@@ -165,22 +176,24 @@ prepare_environment() {
 	echo_broadcast "==> Determining root drive"
 	find_root_drive
 	echo_broadcast "====> Root drive identified at [${root_drive}]"
-	boot_drive=${root_drive%?}1
+	find_boot_drive
 	echo_broadcast "==> Boot Drive [${boot_drive}]"
 	echo_broadcast "==> Figuring out Source and Destination devices"
-	if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
-		source="/dev/mmcblk0"
-		destination="/dev/mtdblock0"
-	elif [ "x${boot_drive}" = "x/dev/mmcblk1p1" ] ; then
-		source="/dev/mmcblk1"
-		destination="/dev/mtdblock0"
-	else
-		echo_broadcast "!!! Could not reliably determine Source and Destination"
-		echo_broadcast "!!! We need to stop here"
-		teardown_environment
-		write_failure
-		exit 2
-	fi
+	source=${boot_drive:0:12}
+	destination="/dev/mtdblock0"
+#	if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
+#		source="/dev/mmcblk0"
+#		destination="/dev/mtdblock0"
+#	elif [ "x${boot_drive}" = "x/dev/mmcblk1p1" ] ; then
+#		source="/dev/mmcblk1"
+#		destination="/dev/mtdblock0"
+#	else
+#		echo_broadcast "!!! Could not reliably determine Source and Destination"
+#		echo_broadcast "!!! We need to stop here"
+#		teardown_environment
+#		write_failure
+#		exit 2
+#	fi
 	echo_broadcast "====> Source identified: [${source}]"
 	echo_broadcast "====> Destination identified: [${destination}]"
 	echo_broadcast "==> Figuring out machine"
@@ -190,7 +203,7 @@ prepare_environment() {
 		echo_broadcast "====> Machine is compatible with BeagleBone Black"
 	fi
 
-  if [ ! -d /boot/uboot ] ; then
+	if [ ! -d /boot/uboot ] ; then
 			echo_broadcast "====> Directory /boot/uboot unexist, create it"
 			mkdir -p /boot/uboot
 		fi
@@ -204,11 +217,11 @@ prepare_environment() {
 }
 
 prepare_environment_reverse() {
-  generate_line 80 '='
-  echo_broadcast "Prepare environment for flashing"
-  start_time=$(date +%s)
-  echo_broadcast "Starting at $(date --date="@$start_time")"
-  generate_line 40
+	generate_line 80 '='
+	echo_broadcast "Prepare environment for flashing"
+	start_time=$(date +%s)
+	echo_broadcast "Starting at $(date --date="@$start_time")"
+	generate_line 40
 
 	value_min_free_kbytes=$(sysctl -n vm.min_free_kbytes)
 	echo_broadcast "==> sysctl: vm.min_free_kbytes=[${value_min_free_kbytes}]"
@@ -216,29 +229,29 @@ prepare_environment_reverse() {
 	sysctl -w vm.min_free_kbytes=16384
 	generate_line 40
 
-  echo_broadcast "==> Determining root drive"
-  find_root_drive
-  echo_broadcast "====> Root drive identified at ${root_drive}"
-  echo_broadcast "==> Determining boot drive"
-  boot_drive="${root_drive%?}1"
-  echo_broadcast "==> Figuring out Source and Destination devices"
-  if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
-    source="/dev/mmcblk0"
-    destination="/dev/mmcblk1"
-  elif [ "x${boot_drive}" = "x/dev/mmcblk1p1" ] ; then
-    source="/dev/mmcblk1"
-    destination="/dev/mmcblk0"
-  else
-    echo_broadcast "!!! Could not reliably determine Source and Destination"
-    echo_broadcast "!!! We need to stop here"
-    teardown_environment_reverse
-    write_failure
-    exit 2
-  fi
-  echo_broadcast "====> Source identified: [${source}]"
-  echo_broadcast "====> Destination identified: [${destination}]"
+	echo_broadcast "==> Determining root drive"
+	find_root_drive
+	echo_broadcast "====> Root drive identified at ${root_drive}"
+	echo_broadcast "==> Determining boot drive"
+	boot_drive="${root_drive%?}1"
+	echo_broadcast "==> Figuring out Source and Destination devices"
+	if [ "x${boot_drive}" = "x/dev/mmcblk0p1" ] ; then
+		source="/dev/mmcblk0"
+		destination="/dev/mmcblk1"
+	elif [ "x${boot_drive}" = "x/dev/mmcblk1p1" ] ; then
+		source="/dev/mmcblk1"
+		destination="/dev/mmcblk0"
+	else
+		echo_broadcast "!!! Could not reliably determine Source and Destination"
+		echo_broadcast "!!! We need to stop here"
+		teardown_environment_reverse
+		write_failure
+		exit 2
+	fi
+	echo_broadcast "====> Source identified: [${source}]"
+	echo_broadcast "====> Destination identified: [${destination}]"
 
-  echo_broadcast "====> Unmounting auto-mounted partitions"
+	echo_broadcast "====> Unmounting auto-mounted partitions"
 
 NUM_MOUNTS=$(mount | grep -v none | grep "${destination}" | wc -l)
 
@@ -248,96 +261,96 @@ i=0 ; while test $i -le ${NUM_MOUNTS} ; do
 	i=$(($i+1))
 done
 
-  echo_broadcast "==> Figuring out machine"
-  get_device
-  echo_broadcast "====> Machine is ${machine}"
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    echo_broadcast "====> Machine is compatible with BeagleBone Black"
-  fi
-  generate_line 80 '='
+	echo_broadcast "==> Figuring out machine"
+	get_device
+	echo_broadcast "====> Machine is ${machine}"
+	if [ "x${is_bbb}" = "xenable" ] ; then
+		echo_broadcast "====> Machine is compatible with BeagleBone Black"
+	fi
+	generate_line 80 '='
 }
 
 teardown_environment() {
-  generate_line 80 '='
-  echo_broadcast "Tearing Down script environment"
-  echo_broadcast "==> Unmounting /tmp"
-  flush_cache
-  
-  umount /tmp
-  echo_broadcast "==> Unmounting /sys/kernel/debug"
-  flush_cache
-  umount /sys/kernel/debug
-  
-  if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
-    echo_broadcast "==> Unmounting /boot/uboot"
-    flush_cache
-    umount /boot/uboot || true
-  fi
-  reset_leds 'none'
+	generate_line 80 '='
+	echo_broadcast "Tearing Down script environment"
+	echo_broadcast "==> Unmounting /tmp"
+	flush_cache
+	
+	umount /tmp
+	echo_broadcast "==> Unmounting /sys/kernel/debug"
+	flush_cache
+	umount /sys/kernel/debug
+	
+	if [ ! "x${boot_drive}" = "x${root_drive}" ] ; then
+		echo_broadcast "==> Unmounting /boot/uboot"
+		flush_cache
+		umount /boot/uboot || true
+	fi
+	reset_leds 'none'
 
-  echo_broadcast "==> Force writeback of nand buffers by Syncing: ${destination}"
-  sync
-  generate_line 40
-  echo_broadcast "===> Syncing: ${destination} complete"
-  end_time=$(date +%s)
-  echo_broadcast "==> This script took $((${end_time}-${start_time})) seconds to run"
-  generate_line 80 '='
+	echo_broadcast "==> Force writeback of nand buffers by Syncing: ${destination}"
+	sync
+	generate_line 40
+	echo_broadcast "===> Syncing: ${destination} complete"
+	end_time=$(date +%s)
+	echo_broadcast "==> This script took $((${end_time}-${start_time})) seconds to run"
+	generate_line 80 '='
 }
 
 teardown_environment_reverse() {
-  generate_line 80 '='
-  echo_broadcast "Tearing Down script environment"
-  flush_cache
-  reset_leds 'none'
+	generate_line 80 '='
+	echo_broadcast "Tearing Down script environment"
+	flush_cache
+	reset_leds 'none'
 
-  echo_broadcast "==> Force writeback of eMMC buffers by Syncing: ${destination}"
-  sync
-  generate_line 40
-  dd if=${destination} of=/dev/null count=100000
-  generate_line 40
-  echo_broadcast "===> Syncing: ${destination} complete"
-  end_time=$(date +%s)
-  echo_broadcast "==> This script took $((${end_time}-${start_time})) seconds to run"
-  generate_line 80 '='
+	echo_broadcast "==> Force writeback of eMMC buffers by Syncing: ${destination}"
+	sync
+	generate_line 40
+	dd if=${destination} of=/dev/null count=100000
+	generate_line 40
+	echo_broadcast "===> Syncing: ${destination} complete"
+	end_time=$(date +%s)
+	echo_broadcast "==> This script took $((${end_time}-${start_time})) seconds to run"
+	generate_line 80 '='
 }
 
 end_script() {
-  empty_line
-  if [ -f /boot/debug.txt ] ; then
-    echo_broadcast "This script has now completed its task"
-    generate_line 40
-    echo_broadcast "debug: enabled"
-    inf_loop
-  else
-    reset_leds 'default-on'
-    echo_broadcast '==> Displaying mount points'
-    generate_line 80
-    mount
-    generate_line 80
-    empty_line
-    generate_line 80 '='
-    echo_broadcast "NAND has been flashed: please wait for device to power down."
-    generate_line 80 '='
+	empty_line
+	if [ -f /boot/debug.txt ] ; then
+		echo_broadcast "This script has now completed its task"
+		generate_line 40
+		echo_broadcast "debug: enabled"
+		inf_loop
+	else
+		reset_leds 'default-on'
+		echo_broadcast '==> Displaying mount points'
+		generate_line 80
+		mount
+		generate_line 80
+		empty_line
+		generate_line 80 '='
+		echo_broadcast "NAND has been flashed: please wait for device to power down."
+		generate_line 80 '='
 
-    flush_cache
-    unset are_we_flasher
-    are_we_flasher=$(grep init-Nand-flasher /proc/cmdline || true)
-    if [ ! "x${are_we_flasher}" = "x" ] ; then
-      echo_broadcast "We are init"
-      #When run as init
-      exec /sbin/init
-      exit #We should not hit that
-    fi
-    echo_broadcast "Calling shutdown"
-    systemctl poweroff || halt
-  fi
+		flush_cache
+		unset are_we_flasher
+		are_we_flasher=$(grep init-Nand-flasher /proc/cmdline || true)
+		if [ ! "x${are_we_flasher}" = "x" ] ; then
+			echo_broadcast "We are init"
+			#When run as init
+			exec /sbin/init
+			exit #We should not hit that
+		fi
+		echo_broadcast "Calling shutdown"
+		systemctl poweroff || halt
+	fi
 }
 
 check_if_run_as_root(){
-  if ! id | grep -q root; then
-    echo "must be run as root"
-    exit
-  fi
+	if ! id | grep -q root; then
+		echo "must be run as root"
+		exit
+	fi
 }
 
 find_root_drive(){
@@ -358,277 +371,286 @@ find_root_drive(){
 	fi
 }
 
+find_boot_drive(){
+	unset root_drive
+	generate_line 40
+
+	boot_drive=$(cat /etc/fstab  | grep boot | awk '{print $1}')
+
+	echo_broadcast "==> boot_drive=[${boot_drive}]"
+}
+
 flush_cache() {
-  sync
-  blockdev --flushbufs ${destination}
+	sync
+	blockdev --flushbufs ${destination}
 }
 
 broadcast() {
-  if [ "x${message}" != "x" ] ; then
-    echo "${message}"
-    echo "${message}" > /dev/tty0 || true
-  fi
+	if [ "x${message}" != "x" ] ; then
+		echo "${message}"
+		echo "${message}" > /dev/tty0 || true
+	fi
 }
 
 echo_broadcast() {
-  local _message="$1"
-  if [ "x${_message}" != "x" ] ; then
-    echo "${_message}"
-    echo "${_message}" > /dev/tty0 || true
-  fi
+	local _message="$1"
+	if [ "x${_message}" != "x" ] ; then
+		echo "${_message}"
+		echo "${_message}" > /dev/tty0 || true
+	fi
 }
 
 echo_debug() {
-  local _message="$1"
-  if [ "x${_message}" != "x" ] ; then
-    echo "${_message}" >&2
-    echo "${_message}" >&2 > /dev/tty0 || true
-  fi
+	local _message="$1"
+	if [ "x${_message}" != "x" ] ; then
+		echo "${_message}" >&2
+		echo "${_message}" >&2 > /dev/tty0 || true
+	fi
 }
 
 empty_line() {
-  echo ""
-  echo "" > /dev/tty0 || true
+	echo ""
+	echo "" > /dev/tty0 || true
 }
 
 generate_line() {
-  local line_length=${1:-80}
-  local line_char=${2:-\-}
-  local line=$(printf "%${line_length}s\n" | tr ' ' \\$line_char)
-  echo_broadcast "${line}"
+	local line_length=${1:-80}
+	local line_char=${2:-\-}
+	local line=$(printf "%${line_length}s\n" | tr ' ' \\$line_char)
+	echo_broadcast "${line}"
 }
 
 inf_loop() {
-  while read MAGIC ; do
-    case $MAGIC in
-      beagleboard.org)
-        echo "Your foo is strong!"
-        bash -i
-        ;;
-      *)	echo "Your foo is weak."
-        ;;
-    esac
-  done
+	while read MAGIC ; do
+		case $MAGIC in
+			beagleboard.org)
+				echo "Your foo is strong!"
+				bash -i
+				;;
+			*)	echo "Your foo is weak."
+				;;
+		esac
+	done
 }
 
 # umount does not like device names without a valid /etc/mtab
 # find the mount point from /proc/mounts
 dev2dir() {
-  grep -m 1 '^$1 ' /proc/mounts | while read LINE ; do set -- $LINE ; echo $2 ; done
+	grep -m 1 '^$1 ' /proc/mounts | while read LINE ; do set -- $LINE ; echo $2 ; done
 }
 
 get_device() {
-  is_bbb="enable"
-  machine=$(cat /proc/device-tree/model | sed "s/ /_/g" | tr -d '\000')
+	is_bbb="enable"
+	machine=$(cat /proc/device-tree/model | sed "s/ /_/g" | tr -d '\000')
 
-  case "${machine}" in
-    TI_AM5728_BeagleBoard*)
-      unset is_bbb
-      ;;
-  esac
+	case "${machine}" in
+		TI_AM5728_BeagleBoard*)
+			unset is_bbb
+			;;
+	esac
 }
 
 reset_leds() {
-  local leds_pattern0=${1:-heartbeat}
-  local leds_pattern1=${1:-mmc0}
-  local leds_pattern2=${1:-none}
-  local leds_pattern3=${1:-mmc1}
-  local leds_base=/sys/class/leds/beaglebone\:green\:usr
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    if [ -e /proc/$CYLON_PID ]; then
-      echo_broadcast "==> Stopping Cylon LEDs ..."
-      kill $CYLON_PID > /dev/null 2>&1
-    fi
+	local leds_pattern0=${1:-heartbeat}
+	local leds_pattern1=${1:-mmc0}
+	local leds_pattern2=${1:-none}
+	local leds_pattern3=${1:-mmc1}
+	local leds_base=/sys/class/leds/beaglebone\:green\:usr
+	if [ "x${is_bbb}" = "xenable" ] ; then
+		if [ -e /proc/$CYLON_PID ]; then
+			echo_broadcast "==> Stopping Cylon LEDs ..."
+			kill $CYLON_PID > /dev/null 2>&1
+		fi
 
-    if [ -e ${leds_base}0/trigger ] ; then
-      echo_broadcast "==> Setting LEDs to ${leds_pattern}"
-      echo $leds_pattern0 > ${leds_base}0/trigger
-      echo $leds_pattern1 > ${leds_base}1/trigger
-      echo $leds_pattern2 > ${leds_base}2/trigger
-      echo $leds_pattern3 > ${leds_base}3/trigger
-    fi
-  else
-    echo_broadcast "!==> We don't know how to reset the leds as we are not a BBB compatible device"
-  fi
+		if [ -e ${leds_base}0/trigger ] ; then
+			echo_broadcast "==> Setting LEDs to ${leds_pattern}"
+			echo $leds_pattern0 > ${leds_base}0/trigger
+			echo $leds_pattern1 > ${leds_base}1/trigger
+			echo $leds_pattern2 > ${leds_base}2/trigger
+			echo $leds_pattern3 > ${leds_base}3/trigger
+		fi
+	else
+		echo_broadcast "!==> We don't know how to reset the leds as we are not a BBB compatible device"
+	fi
 }
 
 write_failure() {
-  echo_broadcast "writing to [${destination}] failed..."
+	echo_broadcast "writing to [${destination}] failed..."
 
-  reset_leds 'heartbeat'
+	reset_leds 'heartbeat'
 
-  generate_line 40
-  flush_cache
-  umount $(dev2dir ${destination}p1) > /dev/null 2>&1 || true
-  umount $(dev2dir ${destination}p2) > /dev/null 2>&1 || true
-  inf_loop
+	generate_line 40
+	flush_cache
+	umount $(dev2dir ${destination}p1) > /dev/null 2>&1 || true
+	umount $(dev2dir ${destination}p2) > /dev/null 2>&1 || true
+	inf_loop
 }
 
 do_we_have_eeprom() {
-  unset got_eeprom
-  #v8 of nvmem...
-  if [ -f /sys/bus/nvmem/devices/at24-0/nvmem ] && [ "x${got_eeprom}" = "x" ] ; then
-    eeprom="/sys/bus/nvmem/devices/at24-0/nvmem"
-    eeprom_location="/sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/at24-0/nvmem"
-    got_eeprom="true"
-  fi
+	unset got_eeprom
+	#v8 of nvmem...
+	if [ -f /sys/bus/nvmem/devices/at24-0/nvmem ] && [ "x${got_eeprom}" = "x" ] ; then
+		eeprom="/sys/bus/nvmem/devices/at24-0/nvmem"
+		eeprom_location="/sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/at24-0/nvmem"
+		got_eeprom="true"
+	fi
 
-  #pre-v8 of nvmem...
-  if [ -f /sys/class/nvmem/at24-0/nvmem ] && [ "x${got_eeprom}" = "x" ] ; then
-    eeprom="/sys/class/nvmem/at24-0/nvmem"
-    eeprom_location="/sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/nvmem/at24-0/nvmem"
-    got_eeprom="true"
-  fi
+	#pre-v8 of nvmem...
+	if [ -f /sys/class/nvmem/at24-0/nvmem ] && [ "x${got_eeprom}" = "x" ] ; then
+		eeprom="/sys/class/nvmem/at24-0/nvmem"
+		eeprom_location="/sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/nvmem/at24-0/nvmem"
+		got_eeprom="true"
+	fi
 
-  #eeprom 3.8.x & 4.4 with eeprom-nvmem patchset...
-  if [ -f /sys/bus/i2c/devices/0-0050/eeprom ] && [ "x${got_eeprom}" = "x" ] ; then
-    eeprom="/sys/bus/i2c/devices/0-0050/eeprom"
+	#eeprom 3.8.x & 4.4 with eeprom-nvmem patchset...
+	if [ -f /sys/bus/i2c/devices/0-0050/eeprom ] && [ "x${got_eeprom}" = "x" ] ; then
+		eeprom="/sys/bus/i2c/devices/0-0050/eeprom"
 
-    if [ -f /sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/eeprom ] ; then
-      eeprom_location="/sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/eeprom"
-    else
-      eeprom_location=$(ls /sys/devices/ocp*/44e0b000.i2c/i2c-0/0-0050/eeprom 2> /dev/null)
-    fi
+		if [ -f /sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/eeprom ] ; then
+			eeprom_location="/sys/devices/platform/ocp/44e0b000.i2c/i2c-0/0-0050/eeprom"
+		else
+			eeprom_location=$(ls /sys/devices/ocp*/44e0b000.i2c/i2c-0/0-0050/eeprom 2> /dev/null)
+		fi
 
-    got_eeprom="true"
-  fi
+		got_eeprom="true"
+	fi
 }
 
 do_we_have_am335x_eeprom() {
-  do_we_have_eeprom
+	do_we_have_eeprom
 }
 
 check_am335x_eeprom() {
-  empty_line
-  generate_line 40 '='
-  echo_broadcast "Checking for Valid ${device_eeprom} header"
+	empty_line
+	generate_line 40 '='
+	echo_broadcast "Checking for Valid ${device_eeprom} header"
 
-  do_we_have_am335x_eeprom
+	do_we_have_am335x_eeprom
 
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    if [ "x${got_eeprom}" = "xtrue" ] ; then
-      eeprom_header=$(hexdump -e '8/1 "%c"' ${eeprom} -n 8 | cut -b 6-8)
-      if [ "x${eeprom_header}" = "x335" ] ; then
-        echo_broadcast "==> Valid ${device_eeprom} header found [${eeprom_header}]"
-        generate_line 40 '='
-      else
-        echo_broadcast "==> Invalid EEPROM header detected"
-        if [ -f /opt/scripts/device/bone/${device_eeprom}.dump ] ; then
-          if [ ! "x${eeprom_location}" = "x" ] ; then
-            echo_broadcast "===> Writing header to EEPROM"
-            dd if=/opt/scripts/device/bone/${device_eeprom}.dump of=${eeprom_location}
-            sync
-            sync
-            eeprom_check=$(hexdump -e '8/1 "%c"' ${eeprom} -n 8 | cut -b 6-8)
-            echo_broadcast "===> eeprom check: [${eeprom_check}]"
-            generate_line 40 '='
-            #We have to reboot, as the kernel only loads the eMMC cape
-            # with a valid header
-            reboot -f
+	if [ "x${is_bbb}" = "xenable" ] ; then
+		if [ "x${got_eeprom}" = "xtrue" ] ; then
+			eeprom_header=$(hexdump -e '8/1 "%c"' ${eeprom} -n 8 | cut -b 6-8)
+			if [ "x${eeprom_header}" = "x335" ] ; then
+				echo_broadcast "==> Valid ${device_eeprom} header found [${eeprom_header}]"
+				generate_line 40 '='
+			else
+				echo_broadcast "==> Invalid EEPROM header detected"
+				if [ -f /opt/scripts/device/bone/${device_eeprom}.dump ] ; then
+					if [ ! "x${eeprom_location}" = "x" ] ; then
+						echo_broadcast "===> Writing header to EEPROM"
+						dd if=/opt/scripts/device/bone/${device_eeprom}.dump of=${eeprom_location}
+						sync
+						sync
+						eeprom_check=$(hexdump -e '8/1 "%c"' ${eeprom} -n 8 | cut -b 6-8)
+						echo_broadcast "===> eeprom check: [${eeprom_check}]"
+						generate_line 40 '='
+						#We have to reboot, as the kernel only loads the eMMC cape
+						# with a valid header
+						reboot -f
 
-            #We shouldnt hit this...
-            exit
-          fi
-        else
-          echo_broadcast "!==> error: no [/opt/scripts/device/bone/${device_eeprom}.dump]"
-          generate_line 40 '='
-        fi
-      fi
-    fi
-  fi
+						#We shouldnt hit this...
+						exit
+					fi
+				else
+					echo_broadcast "!==> error: no [/opt/scripts/device/bone/${device_eeprom}.dump]"
+					generate_line 40 '='
+				fi
+			fi
+		fi
+	fi
 }
 
 check_eeprom() {
-  check_am335x_eeprom
+	check_am335x_eeprom
 }
 
 do_we_have_am57xx_eeprom() {
-  unset got_eeprom
-  if [ -f /sys/bus/i2c/devices/0-0050/eeprom ] && [ "x${got_eeprom}" = "x" ] ; then
-    eeprom="/sys/bus/i2c/devices/0-0050/eeprom"
+	unset got_eeprom
+	if [ -f /sys/bus/i2c/devices/0-0050/eeprom ] && [ "x${got_eeprom}" = "x" ] ; then
+		eeprom="/sys/bus/i2c/devices/0-0050/eeprom"
 
-    if [ -f /sys/devices/platform/44000000.ocp/48070000.i2c/i2c-0/0-0050/eeprom ] ; then
-      eeprom_location="/sys/devices/platform/44000000.ocp/48070000.i2c/i2c-0/0-0050/eeprom"
-    fi
+		if [ -f /sys/devices/platform/44000000.ocp/48070000.i2c/i2c-0/0-0050/eeprom ] ; then
+			eeprom_location="/sys/devices/platform/44000000.ocp/48070000.i2c/i2c-0/0-0050/eeprom"
+		fi
 
-    got_eeprom="true"
-  fi
+		got_eeprom="true"
+	fi
 }
 
 check_am57xx_eeprom() {
-  empty_line
-  generate_line 40 '='
-  echo_broadcast "Checking for Valid ${device_eeprom} header"
+	empty_line
+	generate_line 40 '='
+	echo_broadcast "Checking for Valid ${device_eeprom} header"
 
-  do_we_have_am57xx_eeprom
+	do_we_have_am57xx_eeprom
 
-  if [ "x${got_eeprom}" = "xtrue" ] ; then
-    eeprom_header=$(hexdump -e '8/1 "%c"' ${eeprom} -n 3 | cut -b 2-3)
-    if [ "x${eeprom_header}" = "xU3" ] ; then
-      echo_broadcast "==> Valid ${device_eeprom} header found [${eeprom_header}]"
-      generate_line 40 '='
-    else
-      echo_broadcast "==> Invalid EEPROM header detected"
-      if [ -f /opt/scripts/device/${device_eeprom}.dump ] ; then
-        if [ ! "x${eeprom_location}" = "x" ] ; then
-          echo_broadcast "===> Writing header to EEPROM"
-          dd if=/opt/scripts/device/${device_eeprom}.dump of=${eeprom_location}
-          sync
-          sync
-          eeprom_check=$(hexdump -e '8/1 "%c"' ${eeprom} -n 3 | cut -b 2-3)
-          echo_broadcast "===> eeprom check: [${eeprom_check}]"
-          generate_line 40 '='
-          #We have to reboot, as the kernel only loads the eMMC cape
-          # with a valid header
-          reboot -f
+	if [ "x${got_eeprom}" = "xtrue" ] ; then
+		eeprom_header=$(hexdump -e '8/1 "%c"' ${eeprom} -n 3 | cut -b 2-3)
+		if [ "x${eeprom_header}" = "xU3" ] ; then
+			echo_broadcast "==> Valid ${device_eeprom} header found [${eeprom_header}]"
+			generate_line 40 '='
+		else
+			echo_broadcast "==> Invalid EEPROM header detected"
+			if [ -f /opt/scripts/device/${device_eeprom}.dump ] ; then
+				if [ ! "x${eeprom_location}" = "x" ] ; then
+					echo_broadcast "===> Writing header to EEPROM"
+					dd if=/opt/scripts/device/${device_eeprom}.dump of=${eeprom_location}
+					sync
+					sync
+					eeprom_check=$(hexdump -e '8/1 "%c"' ${eeprom} -n 3 | cut -b 2-3)
+					echo_broadcast "===> eeprom check: [${eeprom_check}]"
+					generate_line 40 '='
+					#We have to reboot, as the kernel only loads the eMMC cape
+					# with a valid header
+					reboot -f
 
-          #We shouldnt hit this...
-          exit
-        fi
-      else
-        echo_broadcast "!==> error: no [/opt/scripts/device/${device_eeprom}.dump]"
-        generate_line 40 '='
-      fi
-    fi
-  fi
+					#We shouldnt hit this...
+					exit
+				fi
+			else
+				echo_broadcast "!==> error: no [/opt/scripts/device/${device_eeprom}.dump]"
+				generate_line 40 '='
+			fi
+		fi
+	fi
 }
 
 countdown() {
-  local from_time=${1:-10}
-  while [ $from_time -gt 0 ] ; do
-    echo -n "${from_time} "
-    sleep 1
-    : $((from_time--))
-  done
-  empty_line
+	local from_time=${1:-10}
+	while [ $from_time -gt 0 ] ; do
+		echo -n "${from_time} "
+		sleep 1
+		: $((from_time--))
+	done
+	empty_line
 }
 
 check_running_system() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Checking running system"
-  echo_broadcast "==> Copying: [${source}] -> [${destination}]"
-  echo_broadcast "==> lsblk:"
-  generate_line 40
-  echo_broadcast "`lsblk || true`"
-  generate_line 40
-  echo_broadcast "==> df -h | grep rootfs:"
-  echo_broadcast "`df -h | grep rootfs || true`"
-  generate_line 40
-  if [ ! -b "${destination}" ] ; then
-    echo_broadcast "!==> Error: [${destination}] does not exist"
-    write_failure
-  fi
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Checking running system"
+	echo_broadcast "==> Copying: [${source}] -> [${destination}]"
+	echo_broadcast "==> lsblk:"
+	generate_line 40
+	echo_broadcast "`lsblk || true`"
+	generate_line 40
+	echo_broadcast "==> df -h | grep rootfs:"
+	echo_broadcast "`df -h | grep rootfs || true`"
+	generate_line 40
+	if [ ! -b "${destination}" ] ; then
+		echo_broadcast "!==> Error: [${destination}] does not exist"
+		write_failure
+	fi
 
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    if [ ! -e /sys/class/leds/beaglebone\:green\:usr0/trigger ] ; then
-      modprobe leds_gpio || true
-      sleep 1
-    fi
-  fi
-  echo_broadcast "==> Giving you time to check..."
-  countdown 10
-  generate_line 80 '='
+	if [ "x${is_bbb}" = "xenable" ] ; then
+		if [ ! -e /sys/class/leds/beaglebone\:green\:usr0/trigger ] ; then
+			modprobe leds_gpio || true
+			sleep 1
+		fi
+	fi
+	echo_broadcast "==> Giving you time to check..."
+	countdown 10
+	generate_line 80 '='
 }
 
 check_running_system_initrd() {
@@ -699,131 +721,145 @@ check_running_system_initrd() {
 }
 
 cylon_leds() {
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    if [ -e /sys/class/leds/beaglebone\:green\:usr0/trigger ] ; then
-      BASE=/sys/class/leds/beaglebone\:green\:usr
-      echo none > ${BASE}0/trigger
-      echo none > ${BASE}1/trigger
-      echo none > ${BASE}2/trigger
-      echo none > ${BASE}3/trigger
+	if [ "x${is_bbb}" = "xenable" ] ; then
+		if [ -e /sys/class/leds/beaglebone\:green\:usr0/trigger ] ; then
+			BASE=/sys/class/leds/beaglebone\:green\:usr
+			echo none > ${BASE}0/trigger
+			echo none > ${BASE}1/trigger
+			echo none > ${BASE}2/trigger
+			echo none > ${BASE}3/trigger
 
-      STATE=1
-      while : ; do
-        case $STATE in
-          1)
-            echo 255 > ${BASE}0/brightness
-            echo 0   > ${BASE}1/brightness
-            STATE=2
-            ;;
-          2)
-            echo 255 > ${BASE}1/brightness
-            echo 0   > ${BASE}0/brightness
-            STATE=3
-            ;;
-          3)
-            echo 255 > ${BASE}2/brightness
-            echo 0   > ${BASE}1/brightness
-            STATE=4
-            ;;
-          4)
-            echo 255 > ${BASE}3/brightness
-            echo 0   > ${BASE}2/brightness
-            STATE=5
-            ;;
-          5)
-            echo 255 > ${BASE}2/brightness
-            echo 0   > ${BASE}3/brightness
-            STATE=6
-            ;;
-          6)
-            echo 255 > ${BASE}1/brightness
-            echo 0   > ${BASE}2/brightness
-            STATE=1
-            ;;
-          *)
-            echo 255 > ${BASE}0/brightness
-            echo 0   > ${BASE}1/brightness
-            STATE=2
-            ;;
-        esac
-        sleep 0.1
-      done
-    fi
-  fi
+			STATE=1
+			while : ; do
+				case $STATE in
+					1)
+						echo 255 > ${BASE}0/brightness
+						echo 0   > ${BASE}1/brightness
+						STATE=2
+						;;
+					2)
+						echo 255 > ${BASE}1/brightness
+						echo 0   > ${BASE}0/brightness
+						STATE=3
+						;;
+					3)
+						echo 255 > ${BASE}2/brightness
+						echo 0   > ${BASE}1/brightness
+						STATE=4
+						;;
+					4)
+						echo 255 > ${BASE}3/brightness
+						echo 0   > ${BASE}2/brightness
+						STATE=5
+						;;
+					5)
+						echo 255 > ${BASE}2/brightness
+						echo 0   > ${BASE}3/brightness
+						STATE=6
+						;;
+					6)
+						echo 255 > ${BASE}1/brightness
+						echo 0   > ${BASE}2/brightness
+						STATE=1
+						;;
+					*)
+						echo 255 > ${BASE}0/brightness
+						echo 0   > ${BASE}1/brightness
+						STATE=2
+						;;
+				esac
+				sleep 0.1
+			done
+		fi
+	fi
 }
 
 _build_uboot_spl_dd_options() {
-  echo_broadcast "==> Figuring out options for SPL U-Boot copy ..."
-  unset dd_spl_uboot
-  if [ ! "x${dd_spl_uboot_count}" = "x" ] ; then
-    dd_spl_uboot="${dd_spl_uboot}count=${dd_spl_uboot_count} "
-  fi
+	echo_broadcast "==> Figuring out options for SPL U-Boot copy ..."
+	unset dd_spl_uboot
+	if [ ! "x${dd_spl_uboot_count}" = "x" ] ; then
+		dd_spl_uboot="${dd_spl_uboot}count=${dd_spl_uboot_count} "
+	fi
 
-  if [ ! "x${dd_spl_uboot_seek}" = "x" ] ; then
-    dd_spl_uboot="${dd_spl_uboot}seek=${dd_spl_uboot_seek} "
-  fi
+	if [ ! "x${dd_spl_uboot_seek}" = "x" ] ; then
+		dd_spl_uboot="${dd_spl_uboot}seek=${dd_spl_uboot_seek} "
+	fi
 
-  if [ ! "x${dd_spl_uboot_conf}" = "x" ] ; then
-    dd_spl_uboot="${dd_spl_uboot}conv=${dd_spl_uboot_conf} "
-  fi
+	if [ ! "x${dd_spl_uboot_conf}" = "x" ] ; then
+		dd_spl_uboot="${dd_spl_uboot}conv=${dd_spl_uboot_conf} "
+	fi
 
-  if [ ! "x${dd_spl_uboot_bs}" = "x" ] ; then
-    dd_spl_uboot="${dd_spl_uboot}bs=${dd_spl_uboot_bs}"
-  fi
-  echo_broadcast "===> Will use : $dd_spl_uboot"
+	if [ ! "x${dd_spl_uboot_bs}" = "x" ] ; then
+		dd_spl_uboot="${dd_spl_uboot}bs=${dd_spl_uboot_bs}"
+	fi
+	echo_broadcast "===> Will use : $dd_spl_uboot"
 }
 
 _build_uboot_dd_options() {
-  echo_broadcast "==> Figuring out options for U-Boot copy ..."
-  unset dd_uboot
-  if [ ! "x${dd_uboot_count}" = "x" ] ; then
-    dd_uboot="${dd_uboot}count=${dd_uboot_count} "
-  fi
+	echo_broadcast "==> Figuring out options for U-Boot copy ..."
+	unset dd_uboot
+	if [ ! "x${dd_uboot_count}" = "x" ] ; then
+		dd_uboot="${dd_uboot}count=${dd_uboot_count} "
+	fi
 
-  if [ ! "x${dd_uboot_seek}" = "x" ] ; then
-    dd_uboot="${dd_uboot}seek=${dd_uboot_seek} "
-  fi
+	if [ ! "x${dd_uboot_seek}" = "x" ] ; then
+		dd_uboot="${dd_uboot}seek=${dd_uboot_seek} "
+	fi
 
-  if [ ! "x${dd_uboot_conf}" = "x" ] ; then
-    dd_uboot="${dd_uboot}conv=${dd_uboot_conf} "
-  fi
+	if [ ! "x${dd_uboot_conf}" = "x" ] ; then
+		dd_uboot="${dd_uboot}conv=${dd_uboot_conf} "
+	fi
 
-  if [ ! "x${dd_uboot_bs}" = "x" ] ; then
-    dd_uboot="${dd_uboot}bs=${dd_uboot_bs}"
-  fi
-  echo_broadcast "===> Will use : $dd_uboot"
+	if [ ! "x${dd_uboot_bs}" = "x" ] ; then
+		dd_uboot="${dd_uboot}bs=${dd_uboot_bs}"
+	fi
+	echo_broadcast "===> Will use : $dd_uboot"
 }
 
 _dd_bootloader() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Writing bootloader to [${destination}]"
-  generate_line 40
+	empty_line
+	generate_line 80 '='
+	for ((i=0;i<FLASHLAYOUT_number_of_line;i++))
+	do
+		partName=${FLASHLAYOUT_data[$i,$COL_PARTNAME]}
+		dev=${FLASHLAYOUT_data[$i,$COL_DEV]}
+		type=${FLASHLAYOUT_data[$i,$COL_TYPE]}
+		offset=${FLASHLAYOUT_data[$i,$COL_OFFSET]}
+		bin2flash=${FLASHLAYOUT_data[$i,$COL_BIN2FLASH]}
+		echo_broadcast "${partName} ${dev} $type $offset $bin2flash"	
+		if [[ ${partName} =~ "bl" ]]; then
+			echo_broadcast "Writing ${partName} to [${dev}]"
+			generate_line 40
+			
+			if [[ ${board} = "imx6ull-npi" ]];then
+				echo_broadcast "==> Copying U-Boot with kobs-ng init -x -v --chip_0_device_path=${dev}  ${bin2flash}"
+				kobs-ng init -x -v --chip_0_device_path=${dev}  ${bin2flash}
+			else
+				echo_broadcast "==> Copying U-Boot with"
+				nandwrite -p ${dev} ${bin2flash}
+			fi
+			
+			
 
-  if [ "x${bootloader_location}" = "xdd_spl_uboot_boot" ] ; then
-    _build_uboot_spl_dd_options
+			generate_line 60
+			echo_broadcast "==> Writing ${partName} completed"	
+			generate_line 60				
+		else
+			continue;
+		fi
+	done;
+	generate_line 80 '='
 
-    echo_broadcast "==> Copying SPL U-Boot with dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}"
-    generate_line 60
-    dd if=${dd_spl_uboot_backup} of=${destination} ${dd_spl_uboot}
-    generate_line 60
-  fi
-  echo_broadcast "==> Copying U-Boot with kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_nand_backup}"
-  generate_line 60
-  kobs-ng init -x -v --chip_0_device_path=/dev/mtd0  ${dd_uboot_nand_backup}
-  generate_line 60
-  echo_broadcast "Writing bootloader completed"
-  generate_line 80 '='
 }
 
 _format_boot() {
-  empty_line
-  echo_broadcast "==> Formatting boot partition with mkfs.vfat -F 16 ${boot_partition} -n ${boot_label}"
-  generate_line 80
-  LC_ALL=C mkfs.vfat -c -F 16 ${boot_partition} -n ${boot_label}
-  generate_line 80
-  echo_broadcast "==> Formatting boot: ${boot_partition} complete"
-  flush_cache
+	empty_line
+	echo_broadcast "==> Formatting boot partition with mkfs.vfat -F 16 ${boot_partition} -n ${boot_label}"
+	generate_line 80
+	LC_ALL=C mkfs.vfat -c -F 16 ${boot_partition} -n ${boot_label}
+	generate_line 80
+	echo_broadcast "==> Formatting boot: ${boot_partition} complete"
+	flush_cache
 }
 
 _format_root_ext4() {
@@ -837,20 +873,64 @@ _format_root_ext4() {
 	flush_cache
 }
 _format_root_ubi(){
-	empty_line
-	echo_broadcast "==> setup rootfs with ubiformat"
-	ubiformat /dev/mtd1
-	echo_broadcast "==> Formatting rootfs: /dev/mtd1 complete"
-	generate_line 80
-	echo_broadcast "==> Attach rootfs: /dev/mtd1 "
-	ubiattach /dev/ubi_ctrl -m 1
-	echo_broadcast "==> Attach rootfs: /dev/mtd1 complete"
-	generate_line 80
-	echo_broadcast "==> Mkvol rootfs: /dev/mtd1 "
-	ubimkvol /dev/ubi0 -Nrootfs -m
-	echo_broadcast "==> Mkvol rootfs: /dev/mtd1 complete"
-	empty_line
-	flush_cache
+#	empty_line
+#	echo_broadcast "==> setup rootfs with ubiformat"
+#	ubiformat /dev/mtd1
+#	echo_broadcast "==> Formatting rootfs: /dev/mtd1 complete"
+#	generate_line 80
+#	echo_broadcast "==> Attach rootfs: /dev/mtd1 "
+#	ubiattach /dev/ubi_ctrl -m 1
+#	echo_broadcast "==> Attach rootfs: /dev/mtd1 complete"
+#	generate_line 80
+#	echo_broadcast "==> Mkvol rootfs: /dev/mtd1 "
+#	ubimkvol /dev/ubi0 -Nrootfs -m
+#	echo_broadcast "==> Mkvol rootfs: /dev/mtd1 complete"
+#	empty_line
+#	flush_cache
+	is_formated=false;
+	for ((i=0;i<FLASHLAYOUT_number_of_line;i++))
+	do
+		partName=${FLASHLAYOUT_data[$i,$COL_PARTNAME]}
+		type=${FLASHLAYOUT_data[$i,$COL_TYPE]}
+		dev=${FLASHLAYOUT_data[$i,$COL_DEV]}
+		offset=${FLASHLAYOUT_data[$i,$COL_OFFSET]}
+		bin2flash=${FLASHLAYOUT_data[$i,$COL_BIN2FLASH]}
+		#echo "DUMP Process for $partName partition $p $number_of_partition"
+		if [[ $partName =~ "bl" ]];then
+			continue;
+		fi
+		empty_line
+		if [ ${is_formated} = "false" ];then 
+			is_formated=true;
+			echo_broadcast "==> setup $partName with ubiformat"	
+			ubiformat $dev
+			echo_broadcast "==> Formatting $dev complete"
+			generate_line 80
+			echo_broadcast "==> Attach rootfs: $dev"
+			partnum=${dev#/dev/mtd}
+			ubiattach /dev/ubi_ctrl -m ${partnum}
+			echo_broadcast "==> Attach : /dev/mtd1 complete"
+			generate_line 80			
+		fi
+
+		echo_broadcast "==> Mkvol $partName: /dev/mtd1 "
+		if [[ $partName == "rootfs" ]];then
+			mkvol_option="-m"
+		else
+			offset=$(echo $offset | sed -e "s/0x//")
+			offset_b=$(echo $((16#$offset)) )
+			mkvol_option="-s ${offset_b}"
+		fi
+
+		if [[ $partName == "bootfs" ]];then
+			partName="boot"
+		fi
+		ubimkvol /dev/ubi0 -N$partName ${mkvol_option}
+		echo_broadcast "==> Mkvol rootfs: /dev/mtd1 complete"
+		empty_line
+		flush_cache			
+
+	done
 }
 _format_root_btrfs() {
 	empty_line
@@ -885,9 +965,19 @@ _copy_boot() {
 		echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_boot_dir}"
 		get_rsync_options
 		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
+
+		if [[ ! "x${tmp_bootfs_dir}" = "x" ]];then
+			echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_bootfs_dir}"
+			rsync -aAxv $rsync_options /boot/uboot/* ${tmp_bootfs_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
+		fi
+
 		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
 			echo_broadcast "==> Found uEnv.txt in boot partition, copying"
 			cp -v /boot/uboot/uEnv.txt ${tmp_boot_dir}/
+			if [[ ! "x${tmp_bootfs_dir}" = "x" ]];then
+				echo_broadcast "==> rsync: /boot/uboot/uEnv.txt -> ${tmp_bootfs_dir}"
+				cp -v /boot/uboot/uEnv.txt ${tmp_bootfs_dir}/
+			fi			
 		fi
 		flush_cache
 		empty_line
@@ -908,19 +998,19 @@ get_device_uuid() {
 }
 
 _generate_uEnv() {
-  local uEnv_file=${1:-${tmp_rootfs_dir}/boot/uEnv.txt}
-  empty_line
-  if [ -f $uEnv_file ]; then
-    echo_broadcast "==> Found pre-existing uEnv file at ${uEnv_file}. Using it."
-    generate_line 80 '*'
-    cat $uEnv_file
-    generate_line 80 '*'
-    empty_line
-  else
-    echo_broadcast "==> Could not find pre-existing uEnv file at ${uEnv_file}"
-    echo_broadcast "===> Generating it from template ..."
-    generate_line 40 '*'
-    cat > ${uEnv_file} <<__EOF__
+	local uEnv_file=${1:-${tmp_rootfs_dir}/boot/uEnv.txt}
+	empty_line
+	if [ -f $uEnv_file ]; then
+		echo_broadcast "==> Found pre-existing uEnv file at ${uEnv_file}. Using it."
+		generate_line 80 '*'
+		cat $uEnv_file
+		generate_line 80 '*'
+		empty_line
+	else
+		echo_broadcast "==> Could not find pre-existing uEnv file at ${uEnv_file}"
+		echo_broadcast "===> Generating it from template ..."
+		generate_line 40 '*'
+		cat > ${uEnv_file} <<__EOF__
 #Docs: http://elinux.org/Beagleboard:U-boot_partitioning_layout_2.0
 
 uname_r=$(uname -r)
@@ -934,10 +1024,10 @@ cmdline=coherent_pool=1M quiet cape_universal=enable
 #cmdline=init=/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh
 
 __EOF__
-    flush_cache
-    generate_line 40 '*'
-    empty_line
-  fi
+		flush_cache
+		generate_line 40 '*'
+		empty_line
+	fi
 	#UUID support for 3.8.x kernel
 	if [ -d /sys/devices/bone_capemgr.*/ ] ; then
 		root_uuid=$(get_device_uuid ${rootfs_partition})
@@ -981,31 +1071,31 @@ _generate_fstab() {
 }
 
 _copy_rootfs() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Copying: Current rootfs to ${rootfs_partition}"
-  generate_line 40
-  echo_broadcast "==> rsync: / -> ${tmp_rootfs_dir}"
-  generate_line 40
-  get_rsync_options
-  rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
-  flush_cache
-  generate_line 40
-  echo_broadcast "==> Copying: Kernel modules"
-  echo_broadcast "===> Creating directory for modules"
-  mkdir -p ${tmp_rootfs_dir}/lib/modules/$(uname -r)/ || true
-  echo_broadcast "===> rsync: /lib/modules/$(uname -r)/ -> ${tmp_rootfs_dir}/lib/modules/$(uname -r)/"
-  generate_line 40
-  rsync -aAx $rsync_options /lib/modules/$(uname -r)/* ${tmp_rootfs_dir}/lib/modules/$(uname -r)/ || write_failure
-  flush_cache
-  generate_line 40
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Copying: Current rootfs to ${rootfs_partition}"
+	generate_line 40
+	echo_broadcast "==> rsync: / -> ${tmp_rootfs_dir}"
+	generate_line 40
+	get_rsync_options
+	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/boot/*,/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
+	flush_cache
+	generate_line 40
+	echo_broadcast "==> Copying: Kernel modules"
+	echo_broadcast "===> Creating directory for modules"
+	mkdir -p ${tmp_rootfs_dir}/lib/modules/$(uname -r)/ || true
+	echo_broadcast "===> rsync: /lib/modules/$(uname -r)/ -> ${tmp_rootfs_dir}/lib/modules/$(uname -r)/"
+	generate_line 40
+	rsync -aAx $rsync_options /lib/modules/$(uname -r)/* ${tmp_rootfs_dir}/lib/modules/$(uname -r)/ || write_failure
+	flush_cache
+	generate_line 40
 
-  echo_broadcast "Copying: Current rootfs to ${rootfs_partition} complete"
-  generate_line 80 '='
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Final System Tweaks:"
-  generate_line 40
+	echo_broadcast "Copying: Current rootfs to ${rootfs_partition} complete"
+	generate_line 80 '='
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Final System Tweaks:"
+	generate_line 40
 
 	#disable_ssh_regeneration sourced from SOC.sh
 	if [ ! "x${disable_ssh_regeneration}" = "xtrue" ] ; then
@@ -1017,17 +1107,23 @@ _copy_rootfs() {
 		fi
 	fi
 
-  _generate_uEnv ${tmp_rootfs_dir}/boot/uEnv.txt
+	_generate_uEnv ${tmp_rootfs_dir}/boot/uEnv.txt
 
-  _generate_fstab
+	_generate_fstab
 
-  #FIXME: What about when you boot from a fat partition /boot ?
-  echo_broadcast "==> /boot/uEnv.txt: disabling Nand flasher script"
-  sed -i -e 's:'$nandscript':#'$nandscript':g' ${tmp_rootfs_dir}/boot/uEnv.txt
-  generate_line 40 '*'
-  cat ${tmp_rootfs_dir}/boot/uEnv.txt
-  generate_line 40 '*'
-  flush_cache
+	#FIXME: What about when you boot from a fat partition /boot ?
+	echo_broadcast "==> /boot/uEnv.txt: disabling Nand flasher script"
+	if [ "x${tmp_bootfs_dir}" = "x" ];then
+		tmp_dir=${tmp_rootfs_dir}/boot/
+	else
+		tmp_dir=${tmp_bootfs_dir}
+	fi
+
+	sed -i -e 's:'$nandscript':#'$nandscript':g' ${tmp_dir}/uEnv.txt
+	generate_line 40 '*'
+	cat ${tmp_rootfs_dir}/boot/uEnv.txt
+	generate_line 40 '*'
+	flush_cache
 }
 
 _copy_rootfs_reverse() {
@@ -1038,7 +1134,11 @@ _copy_rootfs_reverse() {
 	echo_broadcast "==> rsync: / -> ${tmp_rootfs_dir}"
 	generate_line 40
 	get_rsync_options
-	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
+	if [[ ! "x${tmp_bootfs_dir}" = "x" ]];then
+		exclude_opt="/boot/*"
+	fi
+
+	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={${exclude_opt},/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
 	flush_cache
 	generate_line 40
 	echo_broadcast "==> Copying: Kernel modules"
@@ -1083,19 +1183,19 @@ _copy_rootfs_reverse() {
 }
 
 erasing_drive() {
-  local drive="${1:?UNKNOWN}"
-  empty_line
-  generate_line 40
-  echo_broadcast "==> Erasing: all mtd device..."
-  flush_cache
-  generate_line 40
-  flash_erase /dev/mtd0 0 0
-  flash_erase /dev/mtd1 0 0
-  sync
-  generate_line 40
-  flush_cache
-  echo_broadcast "==> Erasing: all mtd device...  complete"
-  generate_line 40
+	local drive="${1:?UNKNOWN}"
+	empty_line
+	generate_line 40
+	echo_broadcast "==> Erasing: all mtd device..."
+	flush_cache
+	generate_line 40
+	flash_erase /dev/mtd0 0 0
+	flash_erase /dev/mtd1 0 0
+	sync
+	generate_line 40
+	flush_cache
+	echo_broadcast "==> Erasing: all mtd device...  complete"
+	generate_line 40
 }
 
 loading_soc_defaults() {
@@ -1119,8 +1219,8 @@ loading_soc_defaults() {
 			cat ${soc_file}
 			generate_line 60 '*'
 			. ${soc_file}
-			echo_broadcast "==> Loaded"
-      
+			echo_broadcast "==> Loaded ${bootloader_location}"
+			
 			if [ "x${bootloader_location}" = "x" ] ; then
 				bootloader_location="dd_spl_uboot_boot"
 			fi
@@ -1191,171 +1291,174 @@ loading_soc_defaults() {
 }
 
 get_ext4_options(){
-  unset ext4_options
-  unset test_mkfs
-  LC_ALL=C mkfs.ext4 -V &> /tmp/mkfs
-  test_mkfs=$(cat /tmp/mkfs | grep mke2fs | grep 1.43 || true)
-  if [ "x${test_mkfs}" = "x" ] ; then
-    ext4_options="${mkfs_options}"
-  else
-    ext4_options="${mkfs_options} -O ^metadata_csum,^64bit"
-  fi
+	unset ext4_options
+	unset test_mkfs
+	LC_ALL=C mkfs.ext4 -V &> /tmp/mkfs
+	test_mkfs=$(cat /tmp/mkfs | grep mke2fs | grep 1.43 || true)
+	if [ "x${test_mkfs}" = "x" ] ; then
+		ext4_options="${mkfs_options}"
+	else
+		ext4_options="${mkfs_options} -O ^metadata_csum,^64bit"
+	fi
 }
 
 get_rsync_options(){
-  unset rsync_options
-  unset test_rsync
-  rsync --version &> /tmp/rsync_ver
-  test_rsync=$(cat /tmp/rsync_ver | grep version | grep 3.0 || true)
-  if [ "x${test_rsync}" = "x" ] ; then
-    rsync_options="--human-readable --info=name0,progress2"
-  else
-    rsync_options=""
-  fi
+	unset rsync_options
+	unset test_rsync
+	rsync --version &> /tmp/rsync_ver
+	test_rsync=$(cat /tmp/rsync_ver | grep version | grep 3.0 || true)
+	if [ "x${test_rsync}" = "x" ] ; then
+		rsync_options="--human-readable --info=name0,progress2"
+	else
+		rsync_options=""
+	fi
 
-  #Speed up production flashing, drop rsync progress...
-  unset are_we_flasher
-  are_we_flasher=$(grep init-eMMC-flasher /proc/cmdline || true)
-  if [ ! "x${are_we_flasher}" = "x" ] ; then
-    rsync_options=""
-  fi
+	#Speed up production flashing, drop rsync progress...
+	unset are_we_flasher
+	are_we_flasher=$(grep init-eMMC-flasher /proc/cmdline || true)
+	if [ ! "x${are_we_flasher}" = "x" ] ; then
+		rsync_options=""
+	fi
 }
 
 partition_drive() {
-  generate_line 80 '!'
-  echo_broadcast "WARNING: DEPRECATED PUBLIC INTERFACE"
-  echo_broadcast "WARNING: YOU SHOULD USE prepare_drive() INSTEAD"
-  echo_broadcast "WARNING: Calling it for you..."
-  generate_line 80 '!'
-  prepare_drive
+	generate_line 80 '!'
+	echo_broadcast "WARNING: DEPRECATED PUBLIC INTERFACE"
+	echo_broadcast "WARNING: YOU SHOULD USE prepare_drive() INSTEAD"
+	echo_broadcast "WARNING: Calling it for you..."
+	generate_line 80 '!'
+	prepare_drive
 }
 
 partition_device() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Partitionning FAT IMAGE"
-  generate_line 40
-  if [ "x${boot_fstype}" = "xfat" ] ; then
-    conf_boot_startmb=${conf_boot_startmb:-"4"}
-    conf_boot_endmb=${conf_boot_endmb:-"96"}
-    sfdisk_fstype=${sfdisk_fstype:-"0xE"}
-    boot_label=${boot_label:-"BEAGLEBONE"}
-    rootfs_label=${rootfs_label:-"rootfs"}
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Partitionning FAT IMAGE"
+	generate_line 40
+	if [ "x${boot_fstype}" = "xfat" ] ; then
+		conf_boot_startmb=${conf_boot_startmb:-"4"}
+		conf_boot_endmb=${conf_boot_endmb:-"96"}
+		sfdisk_fstype=${sfdisk_fstype:-"0xE"}
+		boot_label=${boot_label:-"BEAGLEBONE"}
+		rootfs_label=${rootfs_label:-"rootfs"}
 
-    sfdisk_options="--force --Linux --in-order --unit M"
-    sfdisk_boot_startmb="1"
-    sfdisk_boot_size_mb="${conf_boot_endmb}"
-    sfdisk_rootfs_startmb=$(($sfdisk_boot_startmb + $sfdisk_boot_size_mb))
-    dd if=/dev/zero of=${fat_media} bs=1M count=0 seek=23
-    sync
-    test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true)
+		sfdisk_options="--force --Linux --in-order --unit M"
+		sfdisk_boot_startmb="1"
+		sfdisk_boot_size_mb="${conf_boot_endmb}"
+		sfdisk_rootfs_startmb=$(($sfdisk_boot_startmb + $sfdisk_boot_size_mb))
+		dd if=/dev/zero of=${fat_media} bs=1M count=0 seek=23
+		sync
+		test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true)
 
-    if [ "x${test_sfdisk}" = "x" ] ; then
-      echo_broadcast "sfdisk: [2.26.x or greater]"
-      sfdisk_options="--force"
-      sfdisk_boot_startmb="${sfdisk_boot_startmb}M"
-      sfdisk_boot_size_mb="${sfdisk_boot_size_mb}M"
-      sfdisk_rootfs_startmb="${sfdisk_rootfs_startmb}M"
-    fi
+		if [ "x${test_sfdisk}" = "x" ] ; then
+			echo_broadcast "sfdisk: [2.26.x or greater]"
+			sfdisk_options="--force"
+			sfdisk_boot_startmb="${sfdisk_boot_startmb}M"
+			sfdisk_boot_size_mb="${sfdisk_boot_size_mb}M"
+			sfdisk_rootfs_startmb="${sfdisk_rootfs_startmb}M"
+		fi
 
-    echo_broadcast "==> sfdisk parameters:"
-    echo_broadcast "sfdisk: [sfdisk ${sfdisk_options} ${fat_media}]"
-    echo_broadcast "sfdisk: [${sfdisk_boot_startmb},${sfdisk_boot_size_mb},${sfdisk_fstype},*]"
-    echo_broadcast "sfdisk: [${sfdisk_rootfs_startmb},,,-]"
-    echo_broadcast "==> Partitionning"
-    generate_line 60
-    
-    LC_ALL=C sfdisk ${sfdisk_options} "${fat_media}" <<-__EOF__
+		echo_broadcast "==> sfdisk parameters:"
+		echo_broadcast "sfdisk: [sfdisk ${sfdisk_options} ${fat_media}]"
+		echo_broadcast "sfdisk: [${sfdisk_boot_startmb},${sfdisk_boot_size_mb},${sfdisk_fstype},*]"
+		echo_broadcast "sfdisk: [${sfdisk_rootfs_startmb},,,-]"
+		echo_broadcast "==> Partitionning"
+		generate_line 60
+		
+		LC_ALL=C sfdisk ${sfdisk_options} "${fat_media}" <<-__EOF__
 ${sfdisk_boot_startmb},23,${sfdisk_fstype},-
 __EOF__
-    media_loop=$(losetup -f || true)
-    losetup -o${sfdisk_boot_startmb} ${media_loop} "${fat_media}"
-    sleep 1
+		media_loop=$(losetup -f || true)
+		losetup -o${sfdisk_boot_startmb} ${media_loop} "${fat_media}"
+		sleep 1
 		sync
-    generate_line 60
-    flush_cache
-    empty_line
-    echo_broadcast "==> Partitionning Completed"
-    echo_broadcast "==> Generated Partitions:"
-    generate_line 60
-    LC_ALL=C sfdisk -l ${fat_media}
-    generate_line 60
-    generate_line 80 '='
-    boot_partition="${media_loop}"
-  else
-    conf_boot_startmb=${conf_boot_startmb:-"4"}
-    sfdisk_fstype=${sfdisk_fstype:-"L"}
-    if [ "x${sfdisk_fstype}" = "x0x83" ] ; then
-      sfdisk_fstype="L"
-    fi
-    boot_label=${boot_label:-"BEAGLEBONE"}
-    if [ "x${boot_label}" = "xBOOT" ] ; then
-      boot_label="rootfs"
-    fi
+		generate_line 60
+		flush_cache
+		empty_line
+		echo_broadcast "==> Partitionning Completed"
+		echo_broadcast "==> Generated Partitions:"
+		generate_line 60
+		LC_ALL=C sfdisk -l ${fat_media}
+		generate_line 60
+		generate_line 80 '='
+		boot_partition="${media_loop}"
+	else
+		conf_boot_startmb=${conf_boot_startmb:-"4"}
+		sfdisk_fstype=${sfdisk_fstype:-"L"}
+		if [ "x${sfdisk_fstype}" = "x0x83" ] ; then
+			sfdisk_fstype="L"
+		fi
+		boot_label=${boot_label:-"BEAGLEBONE"}
+		if [ "x${boot_label}" = "xBOOT" ] ; then
+			boot_label="rootfs"
+		fi
 
-    sfdisk_options="--force --Linux --in-order --unit M"
-    sfdisk_boot_startmb="${conf_boot_startmb}"
+		sfdisk_options="--force --Linux --in-order --unit M"
+		sfdisk_boot_startmb="${conf_boot_startmb}"
 
-    test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true)
-    if [ "x${test_sfdisk}" = "x" ] ; then
-      echo_broadcast "sfdisk: [2.26.x or greater]"
-      if [ "x${bootrom_gpt}" = "xenable" ] ; then
-        sfdisk_options="--force --label gpt"
-      else
-        sfdisk_options="--force"
-      fi
-      sfdisk_boot_startmb="${sfdisk_boot_startmb}M"
-    fi
+		test_sfdisk=$(LC_ALL=C sfdisk --help | grep -m 1 -e "--in-order" || true)
+		if [ "x${test_sfdisk}" = "x" ] ; then
+			echo_broadcast "sfdisk: [2.26.x or greater]"
+			if [ "x${bootrom_gpt}" = "xenable" ] ; then
+				sfdisk_options="--force --label gpt"
+			else
+				sfdisk_options="--force"
+			fi
+			sfdisk_boot_startmb="${sfdisk_boot_startmb}M"
+		fi
 
-    echo_broadcast "==> sfdisk parameters:"
-    echo_broadcast "sfdisk: [$(LC_ALL=C sfdisk --version)]"
-    echo_broadcast "sfdisk: [sfdisk ${sfdisk_options} ${destination}]"
-    echo_broadcast "sfdisk: [${sfdisk_boot_startmb},,${sfdisk_fstype},*]"
-    echo_broadcast "==> Partitionning"
-    generate_line 60
-    LC_ALL=C sfdisk ${sfdisk_options} "${destination}" <<-__EOF__
+		echo_broadcast "==> sfdisk parameters:"
+		echo_broadcast "sfdisk: [$(LC_ALL=C sfdisk --version)]"
+		echo_broadcast "sfdisk: [sfdisk ${sfdisk_options} ${destination}]"
+		echo_broadcast "sfdisk: [${sfdisk_boot_startmb},,${sfdisk_fstype},*]"
+		echo_broadcast "==> Partitionning"
+		generate_line 60
+		LC_ALL=C sfdisk ${sfdisk_options} "${destination}" <<-__EOF__
 ${sfdisk_boot_startmb},,${sfdisk_fstype},*
 __EOF__
-    generate_line 60
-    flush_cache
-    empty_line
-    echo_broadcast "==> Partitionning Completed"
-    echo_broadcast "==> Generated Partitions:"
-    generate_line 60
-    LC_ALL=C sfdisk -l ${destination}
-    generate_line 60
-    generate_line 80 '='
-    boot_partition="${destination}p1"
-    rootfs_partition="${boot_partition}"
-  fi
-  #TODO: Rework this for supporting a more complex partition layout
+		generate_line 60
+		flush_cache
+		empty_line
+		echo_broadcast "==> Partitionning Completed"
+		echo_broadcast "==> Generated Partitions:"
+		generate_line 60
+		LC_ALL=C sfdisk -l ${destination}
+		generate_line 60
+		generate_line 80 '='
+		boot_partition="${destination}p1"
+		rootfs_partition="${boot_partition}"
+	fi
+	#TODO: Rework this for supporting a more complex partition layout
 }
 
 _prepare_future_boot() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Preparing future /boot to receive files"
-  generate_line 40
-  _format_boot
-  tmp_boot_dir=${tmp_boot_dir:-"/tmp/boot"}
-  echo_broadcast "==> Creating temporary boot directory (${tmp_boot_dir})"
-  mkdir -p ${tmp_boot_dir} || true
-  echo_broadcast "==> Mounting ${boot_partition} to ${tmp_boot_dir}"
-  mount ${boot_partition} ${tmp_boot_dir} -o sync
-  empty_line
-  generate_line 80 '='
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Preparing future /boot to receive files"
+	generate_line 40
+	_format_boot
+	tmp_boot_dir=${tmp_boot_dir:-"/tmp/boot"}
+	echo_broadcast "==> Creating temporary boot directory (${tmp_boot_dir})"
+	mkdir -p ${tmp_boot_dir} || true
+	echo_broadcast "==> Mounting ${boot_partition} to ${tmp_boot_dir}"
+	mount ${boot_partition} ${tmp_boot_dir} -o sync
+	empty_line
+	generate_line 80 '='
 }
 
 _teardown_future_boot() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Tearing down future boot"
-  generate_line 40
-  empty_line
-  echo_broadcast "==> Unmounting ${tmp_boot_dir}"
-  flush_cache
-  umount ${tmp_boot_dir} || umount -l ${tmp_boot_dir} || write_failure
-  generate_line 80 '='
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Tearing down future boot"
+	generate_line 40
+	empty_line
+	echo_broadcast "==> Unmounting ${tmp_boot_dir}"
+	flush_cache
+	umount ${tmp_boot_dir} || umount -l ${tmp_boot_dir} || write_failure
+	if [[ ! "x${tmp_bootfs_dir}" = "x" ]];then
+		umount ${tmp_bootfs_dir} || umount -l ${tmp_bootfs_dir} || write_failure
+	fi
+	generate_line 80 '='
 }
 
 _prepare_future_rootfs() {
@@ -1368,118 +1471,169 @@ _prepare_future_rootfs() {
 	else
 		_format_root_ubi
 	fi
-	tmp_rootfs_dir=${tmp_rootfs_dir:-"/tmp/rootfs"}
-	echo_broadcast "==> Creating temporary rootfs directory (${tmp_rootfs_dir})"
-	mkdir -p ${tmp_rootfs_dir} || true
-	echo_broadcast "==> Mounting ${rootfs_partition} to ${tmp_rootfs_dir}"
-	mount -t ubifs ubi0:rootfs ${tmp_rootfs_dir} -o async,noatime
-	empty_line
-	generate_line 80 '='
+#	tmp_rootfs_dir=${tmp_rootfs_dir:-"/tmp/rootfs"}
+#	echo_broadcast "==> Creating temporary rootfs directory (${tmp_rootfs_dir})"
+#	mkdir -p ${tmp_rootfs_dir} || true
+#	echo_broadcast "==> Mounting ${rootfs_partition} to ${tmp_rootfs_dir}"
+#	mount -t ubifs ubi0:rootfs ${tmp_rootfs_dir} -o async,noatime
+#	empty_line
+#	generate_line 80 '='
+
+	for ((i=0;i<FLASHLAYOUT_number_of_line;i++))
+	do
+		partName=${FLASHLAYOUT_data[$i,$COL_PARTNAME]}
+		type=${FLASHLAYOUT_data[$i,$COL_TYPE]}
+		dev=${FLASHLAYOUT_data[$i,$COL_DEV]}
+		offset=${FLASHLAYOUT_data[$i,$COL_OFFSET]}
+		bin2flash=${FLASHLAYOUT_data[$i,$COL_BIN2FLASH]}
+		#echo "DUMP Process for $partName partition $p $number_of_partition"
+		if [[ ${partName} =~ "fs" ]] && [[ ${type} = "systemfs"  ]];then
+			temp=tmp_${partName}_dir
+			eval $temp="/tmp/${partName}"
+			echo_broadcast "==> Creating temporary rootfs directory (${!temp})"
+			mkdir -p ${!temp} || true
+			echo_broadcast "==> Mounting ${partName} to ${!temp}"
+
+			if [[ $partName == "bootfs" ]];then
+				partName="boot"
+			fi
+
+			mount -t ubifs ubi0:${partName} ${!temp} -o async,noatime
+			empty_line
+			generate_line 80 '='			
+		fi
+	done
 }
 
 _teardown_future_rootfs() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Tearing down future rootfs"
-  generate_line 40
-  empty_line
-  echo_broadcast "==> Unmounting ${tmp_rootfs_dir}"
-  flush_cache
-  umount ${tmp_rootfs_dir} || umount -l ${tmp_rootfs_dir} || write_failure
-  ubidetach /dev/ubi_ctrl -m 1
-  generate_line 80 '='
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Tearing down future rootfs"
+	generate_line 40
+	empty_line
+	echo_broadcast "==> Unmounting ${tmp_rootfs_dir}"
+	flush_cache
+	umount ${tmp_rootfs_dir} || umount -l ${tmp_rootfs_dir} || write_failure
+	ubidetach /dev/ubi_ctrl -m ${partnum}
+	generate_line 80 '='
+}
+
+
+function read_flashlayout() {
+	local i=0;
+	echo " debug : ${1}"
+	for layout in ${1}; do
+		#PartName
+		FLASHLAYOUT_data[$i,$COL_PARTNAME]=$(echo $layout | cut -d',' -f1);
+		#COL_DEV
+		FLASHLAYOUT_data[$i,$COL_DEV]=$(echo $layout | cut -d',' -f2);
+		#COL_TYPE
+		FLASHLAYOUT_data[$i,$COL_TYPE]=$(echo $layout | cut -d',' -f3) ;
+		#Offset
+		FLASHLAYOUT_data[$i,$COL_OFFSET]=$(echo $layout | cut -d',' -f4) ;
+		#Bin2flash
+		FLASHLAYOUT_data[$i,$COL_BIN2FLASH]=$(echo $layout | cut -d',' -f5) ;
+
+		i=$(($i+1))
+		echo "$(echo $layout | cut -d',' -f1)"
+	done
+	FLASHLAYOUT_number_of_line=$i
 }
 
 prepare_drive() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Preparing drives"
-  erasing_drive ${destination}
-  loading_soc_defaults
-  _dd_bootloader
-  
-  boot_partition=1
-  rootfs_partition=2
-  partition_device
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Preparing drives"
+	erasing_drive ${destination}
+	loading_soc_defaults
+	#flashlayout_file="FlashLayout_$(basename "$(pwd)")"
+	read_flashlayout "${FlashLayout_NAND}"
 
-  if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
-    tmp_rootfs_dir="/tmp/rootfs"
-    _prepare_future_rootfs
-    tmp_boot_dir="/tmp/rootfs/boot"
-    media_rootfs="2"
-    _prepare_future_boot
-    _copy_boot
-    
-    _copy_rootfs
-    _teardown_future_boot
-    _teardown_future_rootfs
-  else
-    # it will go here!
-    rootfs_label=${boot_label}
-    tmp_rootfs_dir="/tmp/rootfs"
-    _prepare_future_rootfs
-    media_rootfs="1"
-    _copy_rootfs
-    _teardown_future_rootfs
-  fi
-  teardown_environment
 
-  end_script
+	_dd_bootloader
+	
+	boot_partition=1
+	rootfs_partition=2
+	partition_device
+
+	if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
+		tmp_rootfs_dir="/tmp/rootfs"
+		_prepare_future_rootfs
+		tmp_boot_dir="/tmp/rootfs/boot"
+		media_rootfs="2"
+		_prepare_future_boot
+		_copy_boot
+		
+		_copy_rootfs
+		_teardown_future_boot
+		_teardown_future_rootfs
+	else
+		# it will go here!
+		rootfs_label=${boot_label}
+		tmp_rootfs_dir="/tmp/rootfs"
+		_prepare_future_rootfs
+		media_rootfs="1"
+		_copy_rootfs
+		_teardown_future_rootfs
+	fi
+	teardown_environment
+
+	end_script
 }
 
 prepare_drive_reverse() {
-  empty_line
-  generate_line 80 '='
-  echo_broadcast "Preparing drives"
-  erasing_drive ${destination}
-  loading_soc_defaults
+	empty_line
+	generate_line 80 '='
+	echo_broadcast "Preparing drives"
+	erasing_drive ${destination}
+	loading_soc_defaults
 
-  get_ext4_options
+	get_ext4_options
 
-  _dd_bootloader
+	_dd_bootloader
 
-  boot_partition=
-  rootfs_partition=
-  partition_device
+	boot_partition=
+	rootfs_partition=
+	partition_device
 
-  if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
-    tmp_boot_dir="/tmp/boot"
-    _prepare_future_boot
-    _copy_boot
-    _teardown_future_boot
+	if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
+		tmp_boot_dir="/tmp/boot"
+		_prepare_future_boot
+		_copy_boot
+		_teardown_future_boot
 
-    tmp_rootfs_dir="/tmp/rootfs"
-    _prepare_future_rootfs
-    media_rootfs="2"
-    _copy_rootfs_reverse
-    _teardown_future_rootfs
-  else
-    rootfs_label=${boot_label}
-    tmp_rootfs_dir="/tmp/rootfs"
-    _prepare_future_rootfs
-    media_rootfs="1"
-    _copy_rootfs_reverse
-    _teardown_future_rootfs
-  fi
-  teardown_environment_reverse
-  end_script
+		tmp_rootfs_dir="/tmp/rootfs"
+		_prepare_future_rootfs
+		media_rootfs="2"
+		_copy_rootfs_reverse
+		_teardown_future_rootfs
+	else
+		rootfs_label=${boot_label}
+		tmp_rootfs_dir="/tmp/rootfs"
+		_prepare_future_rootfs
+		media_rootfs="1"
+		_copy_rootfs_reverse
+		_teardown_future_rootfs
+	fi
+	teardown_environment_reverse
+	end_script
 }
 
 startup_message(){
-  clear
-  generate_line 80 '='
-  echo_broadcast "Starting Nand Flasher from microSD media"
-  echo_broadcast "Version: [${version_message}]"
-  generate_line 80 '='
-  empty_line
+	clear
+	generate_line 80 '='
+	echo_broadcast "Starting Nand Flasher from microSD media"
+	echo_broadcast "Version: [${version_message}]"
+	generate_line 80 '='
+	empty_line
 }
 
 activate_cylon_leds() {
-  if [ "x${is_bbb}" = "xenable" ] ; then
-    cylon_leds & CYLON_PID=$!
-  else
-    echo "Not activating Cylon LEDs as we are not a BBB compatible device"
-  fi
+	if [ "x${is_bbb}" = "xenable" ] ; then
+		cylon_leds & CYLON_PID=$!
+	else
+		echo "Not activating Cylon LEDs as we are not a BBB compatible device"
+	fi
 }
 
 
