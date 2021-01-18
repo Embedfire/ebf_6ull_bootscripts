@@ -1078,7 +1078,12 @@ _copy_rootfs() {
 	echo_broadcast "==> rsync: / -> ${tmp_rootfs_dir}"
 	generate_line 40
 	get_rsync_options
-	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/boot/*,/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
+
+	if [[ ! "x${tmp_bootfs_dir}" = "x" ]];then
+		exclude_opt="/boot/*,"
+	fi
+	echo_broadcast "===> rsync:${tmp_rootfs_dir} --exclude={${exclude_opt}/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt}"
+	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={${exclude_opt}/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
 	flush_cache
 	generate_line 40
 	echo_broadcast "==> Copying: Kernel modules"
