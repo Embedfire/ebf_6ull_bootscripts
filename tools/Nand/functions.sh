@@ -831,7 +831,7 @@ _dd_bootloader() {
 			echo_broadcast "Writing ${partName} to [${dev}]"
 			generate_line 40
 			
-			if [[ ${board} = "imx6ull-npi" ]];then
+			if [[ ${board} =~ "imx6ull-npi" ]];then
 				echo_broadcast "==> Copying U-Boot with kobs-ng init -x -v --chip_0_device_path=${dev}  ${bin2flash}"
 				kobs-ng init -x -v --chip_0_device_path=${dev}  ${bin2flash}
 			else
