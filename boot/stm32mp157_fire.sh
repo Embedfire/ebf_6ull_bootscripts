@@ -12,7 +12,10 @@ else
 	root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)"
 fi
 
-if [[ "x${root_drive}" =~ "x/dev/mmcblk" ]]; then
+
+res=$(echo ${root_drive} | grep "mmcblk")
+if [ "$res" = "$root_drive" ]; then
+	echo "if " >> /home/debian/log.txt
 	actual_image_file=/dev/$(mount | sed -n 's|^/dev/\(.*\) on /boot .*|\1|p')
 else
 	media_loop=$(losetup -f || true)
