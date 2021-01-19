@@ -1830,7 +1830,7 @@ prepare_drive_reverse() {
 
 	get_ext4_options
 	
-	read_flashlayout "${FlashLayout}"
+	read_flashlayout "${FlashLayout_EMMC}"
 
 	generate_gpt_partition_table_from_flash_layout
 
