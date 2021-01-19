@@ -220,12 +220,10 @@ prepare_environment() {
 			echo_broadcast "====> Directory /boot/uboot unexist, create it"
 			mkdir -p /boot/uboot
 		fi
-	if [ ! ${is_mounted} ];then 
-    if [ ! ${is_mounted} ];then 
-	if [ ! ${is_mounted} ];then 
-		  mount ${boot_drive} /boot/uboot -o ro || try_vfat
-	fi
-	echo_broadcast "====> /dev/mmcblk1p4 already mounted on /boot."
+		if [ ! ${is_mounted} ];then 
+			mount ${boot_drive} /boot/uboot -o ro || try_vfat
+		fi
+		echo_broadcast "====> /dev/mmcblk1p4 already mounted on /boot."
 	fi
 
 	generate_line 80 '='
@@ -877,7 +875,9 @@ _dd_bootloader() {
 			echo_broadcast "Writing ${partName} to [${dev}]"
 			generate_line 40
 			if [ ! $offset = "x" ] && [ $type = "bin" ] ;then
-				dd_uboot="seek=1 bs=$offset"
+				offset=$(echo $offset | sed -e "s/0x//")
+				offset_b=$(echo $((16#$offset)) )
+				dd_uboot="seek=1 bs=$offset_b"
 			fi			
 			_activated_boot_partition ${dev} 0
 			echo_broadcast "==> Copying SPL U-Boot with dd if=${bin2flash} of=${dev} ${dd_uboot}"
@@ -1796,6 +1796,10 @@ i
 __EOF__
 
 				# add boot flags on gpt parition
+				if [ "$partName" == "bootfs" ];then
+					boot_partition=${FLASHLAYOUT_data[$i,$COL_DEV]}
+					parted ${destination} set $j boot on
+				fi				
 				if [ "$partName" == "bootfs" ];then
 					boot_partition=${FLASHLAYOUT_data[$i,$COL_DEV]}
 					parted ${destination} set $j boot on

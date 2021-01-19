@@ -25,6 +25,19 @@ if [ -f /var/lib/alsa/asound.state ] ; then
 	aplay -l && alsactl restore asound.state
 fi
 
+
+# save the random mac address if unexist
+wfile="/boot/uEnv.txt"
+keth0addr=$(sed -nre 's/^ *ethaddr=([0-9a-fA-F:]+) *$/\1/p' $wfile)
+if [ "x${keth0addr}" = "x" ] ; then
+	rndaddr=$(ip address show dev eth0 | sed -nre 's/ *link\/ether ([0-9a-fA-F:]+) .*/\1/p')
+	echo "# specify kernel eth0 mac address" >> $wfile
+	echo "ethaddr=$rndaddr" >> $wfile
+	echo "" >> $wfile
+	sync
+fi
+
+
 modprobe g_multi file=${actual_image_file} removable=1 cdrom=0 ro=0 stall=0 nofua=1 iManufacturer=embedfire iProduct=embedfire iSerialNumber=1234fire5678
 
 $(dirname $0)/autoconfigure_usb0.sh || true
