@@ -15,7 +15,6 @@ fi
 
 res=$(echo ${root_drive} | grep "mmcblk")
 if [ "$res" = "$root_drive" ]; then
-	echo "if " >> /home/debian/log.txt
 	actual_image_file=/dev/$(mount | sed -n 's|^/dev/\(.*\) on /boot .*|\1|p')
 else
 	media_loop=$(losetup -f || true)
@@ -40,6 +39,25 @@ if [ "x${keth0addr}" = "x" ] ; then
 	sync
 fi
 
+is_empty_dir(){
+    return `ls -A $1|wc -w`
+}
+
+storage_media=$(cat $wfile | grep "storage_media=" | awk -F '=' '{print $3}')
+if [ "x${storage_media}" = "x" ]; then
+	if is_empty_dir /sys/kernel/debug/mtd/
+	then
+		storage_media="init=/opt/scripts/tools/eMMC/init-eMMC-flasher-v3.sh"
+		echo "# specify storage_media" >> $wfile
+		echo "storage_media=$storage_media" >> $wfile
+		echo "" >> $wfile
+	else
+		storage_media="init=/opt/scripts/tools/Nand/init-Nand-flasher-v1.sh"
+		echo "# specify storage_media" >> $wfile
+		echo "storage_media=$storage_media" >> $wfile
+		echo "" >> $wfile		
+	fi	
+fi
 
 modprobe g_multi file=${actual_image_file} removable=1 cdrom=0 ro=0 stall=0 nofua=1 iManufacturer=embedfire iProduct=embedfire iSerialNumber=1234fire5678
 
