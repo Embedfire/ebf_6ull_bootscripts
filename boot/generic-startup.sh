@@ -189,7 +189,7 @@ if [ -f /proc/device-tree/model ] ; then
 	Embedfire_i\.MX6ULL_Board)
 		script="imx6ull_fire.sh"
 		;;
-	Embedfire_STM32MP157_Star_Board)
+	*STM32MP157*)
 		script="stm32mp157_fire.sh"
 		;;
 	*)
