@@ -156,6 +156,17 @@ prepare_environment() {
 	
 	mount -t tmpfs tmpfs /tmp
 
+	 if grep -qs '/sys' /proc/mounts; then
+			echo_broadcast "====> sysfs alrealy mount!"
+	 else
+			mount -t sysfs sysfs /sys
+	 fi
+
+	 if grep -qs 'proc' /proc/mounts; then
+			echo_broadcast "====> procfs alrealy mount!"
+	 else
+			mount -t proc proc /proc
+	 fi
 	echo_broadcast "==> Preparing:/sys/kernel/debug"
 	 if grep -qs '/sys/kernel/debug' /proc/mounts; then
 			echo_broadcast "====> debugfs alrealy mount!"
@@ -909,11 +920,11 @@ _format_root_ubi(){
 			echo_broadcast "==> Attach rootfs: $dev"
 			partnum=${dev#/dev/mtd}
 			ubiattach /dev/ubi_ctrl -m ${partnum}
-			echo_broadcast "==> Attach : /dev/mtd1 complete"
+			echo_broadcast "==> Attach : $dev complete"
 			generate_line 80			
 		fi
 
-		echo_broadcast "==> Mkvol $partName: /dev/mtd1 "
+		echo_broadcast "==> Mkvol $partName: $dev "
 		if [[ $partName == "rootfs" ]];then
 			mkvol_option="-m"
 		else
@@ -926,7 +937,7 @@ _format_root_ubi(){
 			partName="boot"
 		fi
 		ubimkvol /dev/ubi0 -N$partName ${mkvol_option}
-		echo_broadcast "==> Mkvol rootfs: /dev/mtd1 complete"
+		echo_broadcast "==> Mkvol $partName: $dev complete"
 		empty_line
 		flush_cache			
 
@@ -1080,10 +1091,10 @@ _copy_rootfs() {
 	get_rsync_options
 
 	if [[ ! "x${tmp_bootfs_dir}" = "x" ]];then
-		exclude_opt="/boot/*,"
+		exclude_opt="/boot,"
 	fi
-	echo_broadcast "===> rsync:${tmp_rootfs_dir} --exclude={${exclude_opt}/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt}"
-	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={${exclude_opt}/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
+	echo_broadcast "===> rsync:${tmp_rootfs_dir} --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt}"
+	rsync -aAx $rsync_options /* ${tmp_rootfs_dir} --exclude={/dev/*,/proc/*,/sys/*,/tmp/*,/run/*,/mnt/*,/media/*,/lost+found,/lib/modules/*,/uEnv.txt} || write_failure
 	flush_cache
 	generate_line 40
 	echo_broadcast "==> Copying: Kernel modules"
