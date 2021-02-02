@@ -1,5 +1,5 @@
 #!/bin/sh -e
-. /boot/SOC.sh
+#. /boot/SOC.sh
 #eMMC flasher just exited single user mode via: [exec /sbin/init]
 #as we can't shudown properly in single user mode..
 unset are_we_flasher
@@ -62,8 +62,9 @@ fi
 
 #Resize drive when requested
 if [ -d /home/debian/.resizerootfs ] ; then
-	ROOT_DEV=${conf_root_device#/dev/}
-
+	ROOT_DEV=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}'| awk -F '/' '{print $3}')
+	#${conf_root_device#/dev/}
+	ROOT_DEV=${ROOT_DEV%p*}
 	ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
 
   	PART_NUM=${ROOT_PART#${ROOT_DEV}p}
