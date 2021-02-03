@@ -65,7 +65,7 @@ do_expand(){
 	if [ -d /home/debian/.resizerootfs ] ; then
 		ROOT_DEV=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}'| awk -F '/' '{print $3}')
 		#${conf_root_device#/dev/}
-		ROOT_DEV=${ROOT_DEV}
+		ROOT_DEV=${ROOT_DEV%p*}
 		ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
 
 		PART_NUM=${ROOT_PART#${ROOT_DEV}p}
