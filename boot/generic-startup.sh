@@ -95,7 +95,7 @@ do_expand(){
 
 	p
 	w
-	EOF
+EOF
 	ASK_TO_REBOOT=1
 
 	# now set up an init.d script
