@@ -1,11 +1,13 @@
 #!/bin/bash
 
-echo "root"|su -c ' ifconfig wlan0 up' root
+rfkill unblock all
+
+ifconfig wlan0 up
 
 if [ -f /etc/wpa_supplicant/wpa_supplicant.conf ] ; then
 
-  echo "root"|su -c 'wpa_supplicant -B -c /etc/wpa_supplicant/wpa_supplicant.conf -iwlan0' root &
+  wpa_supplicant -B -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0
 
 fi
 
-echo "root"|su -c 'udhcpc -b -i wlan0' root
+udhcpc -b -i wlan0
