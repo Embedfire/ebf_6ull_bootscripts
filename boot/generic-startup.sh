@@ -100,32 +100,32 @@ EOF
 
 	# now set up an init.d script
 	cat <<EOF > /etc/init.d/resize2fs_once &&
-	#!/bin/sh
-	### BEGIN INIT INFO
-	# Provides:          resize2fs_once
-	# Required-Start:
-	# Required-Stop:
-	# Default-Start: 3
-	# Default-Stop:
-	# Short-Description: Resize the root filesystem to fill partition
-	# Description:
-	### END INIT INFO
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          resize2fs_once
+# Required-Start:
+# Required-Stop:
+# Default-Start: 3
+# Default-Stop:
+# Short-Description: Resize the root filesystem to fill partition
+# Description:
+### END INIT INFO
 
-	. /lib/lsb/init-functions
+. /lib/lsb/init-functions
 
-	case "\$1" in
+case "\$1" in
 	start)
 		log_daemon_msg "Starting resize2fs_once" &&
 		resize2fs /dev/$ROOT_PART &&
 		update-rc.d resize2fs_once remove &&
 		rm /etc/init.d/resize2fs_once &&
 		log_end_msg \$?
-		;;
+	;;
 	*)
 		echo "Usage: \$0 start" >&2
 		exit 3
-		;;
-	esac
+	;;
+esac
 EOF
 	chmod +x /etc/init.d/resize2fs_once &&
 	update-rc.d resize2fs_once defaults &&
