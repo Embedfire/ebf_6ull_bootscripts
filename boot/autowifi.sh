@@ -1,12 +1,12 @@
 #!/bin/bash -e
 
-echo "root"|su -c 'rfkill unblock wifi' root
+echo "root"|su -c 'connmanctl enable wifi' root
 
 echo "root"|su -c 'ifconfig wlan0 up' root
 
 if [ -f /etc/wpa_supplicant/wpa_supplicant.conf ] ; then
 
-  echo "root"|su -c 'wpa_supplicant -B -c /etc/wpa_supplicant/wpa_supplicant.co$
+  echo "root"|su -c 'wpa_supplicant -B -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan0' root
 
 fi
 
