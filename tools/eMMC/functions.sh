@@ -160,6 +160,25 @@ prepare_environment() {
 	echo_broadcast "==> Preparing /tmp"
 	mount -t tmpfs tmpfs /tmp
 
+	if grep -qs '/sys' /proc/mounts; then
+		echo_broadcast "====> sysfs alrealy mount!"
+	else
+		mount -t sysfs sysfs /sys
+	fi
+
+	if grep -qs 'proc' /proc/mounts; then
+		echo_broadcast "====> procfs alrealy mount!"
+	else
+		mount -t proc proc /proc
+	fi
+	echo_broadcast "==> Preparing:/sys/kernel/debug"
+	if grep -qs '/sys/kernel/debug' /proc/mounts; then
+		echo_broadcast "====> debugfs alrealy mount!"
+	else
+		mount -t debugfs debugfs /sys/kernel/debug
+	fi
+
+	
 	if [ -f /proc/sys/vm/min_free_kbytes ] ; then
 		echo_broadcast "==> Preparing sysctl"
 		value_min_free_kbytes=$(sysctl -n vm.min_free_kbytes)
@@ -372,18 +391,19 @@ check_if_run_as_root(){
 
 find_root_drive(){
 	unset root_drive
-		generate_line 40
+	generate_line 40
 
-		root_drive=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)
+	root_drive=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)
 
-		echo_broadcast "==> root_drive=[${root_drive}]"
+	echo_broadcast "==> root_drive=[${root_drive}]"
 }
 
 find_boot_drive(){
-	unset root_drive
 	generate_line 40
 
-	boot_drive=$(cat /etc/fstab  | grep boot | awk '{print $1}')
+	media_device=${root_drive%p*}
+
+	boot_drive=$(sfdisk -ld ${media_device} | grep boot | awk -F ':' '{print $1}')
 
 	echo_broadcast "==> boot_drive=[${boot_drive}]"
 }
@@ -1478,7 +1498,7 @@ _teardown_future_rootfs() {
   umount ${tmp_rootfs_dir} || umount -l ${tmp_rootfs_dir} || write_failure
   generate_line 80 '='
 }
-
+:<<eof
 prepare_drive() {
   empty_line
   generate_line 80 '='
@@ -1519,7 +1539,7 @@ prepare_drive() {
   end_script
 }
 
-
+eof
 
 startup_message(){
   clear
@@ -1821,7 +1841,7 @@ __EOF__
 }
 
 
-prepare_drive_reverse() {
+prepare_drive() {
 	empty_line
 	generate_line 80 '='
 	echo_broadcast "Preparing drives"
