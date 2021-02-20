@@ -17,6 +17,7 @@ if [ "x${root_drive}" = "x/dev/mmcblk0p2" ] || [ "x${root_drive}" = "x/dev/mmcbl
 else
 	media_loop=$(losetup -f || true)
     losetup -o1M ${media_loop} "${fat_media}"
+	mkdir ${boot_dir}
 	mount ${media_loop} ${boot_dir} -o sync
 	actual_image_file=${media_loop}
 fi
