@@ -12,6 +12,13 @@ else
 	root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)"
 fi
 
+media_device=${root_drive%p*}
+
+# mount boot partation
+boot_drive=$(sfdisk -ld ${media_device} | grep boot | awk -F ':' '{print $1}')
+
+
+mount ${boot_drive} /boot
 
 res=$(echo ${root_drive} | grep "mmcblk")
 if [ "$res" = "$root_drive" ]; then
