@@ -7,7 +7,8 @@
 
 version_message="1.20180412: all ssh regneration override..."
 #emmcscript="cmdline=init=/opt/scripts/tools/eMMC/$(basename $0)"
-emmcscript="flash_firmware=enable"
+emmcscript="flash_firmware=continued"
+oncescript="flash_firmware=once"
 #This is just a backup-backup-backup for old images...
 #https://rcn-ee.com/repos/bootloader/am335x_evm/
 http_spl="MLO-am335x_evm-v2018.09-r7"
@@ -967,6 +968,7 @@ _copy_boot() {
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/uboot/MLO ] ; then
 		echo_broadcast "==> rsync $rsync_options /boot/uboot/ -> ${tmp_boot_dir}"
 		get_rsync_options
+		sed -i -e 's:'$oncescript':#'$oncescript':g' /boot/uboot/uEnv.txt
 		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
 		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
 			echo_broadcast "==> Found uEnv.txt in boot partition, copying"
