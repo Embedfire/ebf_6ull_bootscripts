@@ -63,6 +63,7 @@ fi
 #Resize drive when requested
 do_expand(){
 	if [ -d /home/debian/.resizerootfs ] ; then
+	depmod -a
 		ROOT_DEV=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}'| awk -F '/' '{print $3}')
 		#${conf_root_device#/dev/}
 		ROOT_DEV=${ROOT_DEV%p*}
