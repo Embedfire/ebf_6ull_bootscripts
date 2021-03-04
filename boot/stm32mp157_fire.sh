@@ -66,6 +66,21 @@ if [ "x${storage_media}" = "x" ]; then
 	fi	
 fi
 
+wfile="/boot/SOC.sh"
+#dest=$(cat $wfile | grep "dest=" | awk -F '=' '{print $3}')
+#if [ "x${dest}" = "x" ];then
+flash_devices=$(cat /proc/partitions|grep -e "mmcblk[0-9]$"| awk  '{print $4}')
+for device in ${flash_devices}
+	do
+	if [ "x/dev/${device}" = "x${media_device}" ];then
+		continue;
+	fi
+	dest=/dev/${device}
+	break;
+done	
+sed ${wfile} -i -e "s>^dest=.*>dest=$dest>"
+#fi
+
 modprobe g_multi file=${actual_image_file} removable=1 cdrom=0 ro=0 stall=0 nofua=1 iManufacturer=embedfire iProduct=embedfire iSerialNumber=1234fire5678
 
 $(dirname $0)/autoconfigure_usb0.sh || true
