@@ -34,4 +34,4 @@ if [ -e /etc/rotation ]; then
 	read rotation < /etc/rotation
 fi
 
-/usr/bin/psplash
+/usr/bin/psplash /lib/firmware/logo.bmp
