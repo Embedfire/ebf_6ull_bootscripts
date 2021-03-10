@@ -5,12 +5,12 @@ boot_dir="/boot"
 
 unset root_drive
 
-root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root=UUID= | awk -F 'root=' '{print $2}' || true)"
-if [ ! "x${root_drive}" = "x" ] ; then
-	root_drive="$(/sbin/findfs ${root_drive} || true)"
-else
-	root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)"
-fi
+#root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root=UUID= | awk -F 'root=' '{print $2}' || true)"
+#if [ ! "x${root_drive}" = "x" ] ; then
+#	root_drive="$(/sbin/findfs ${root_drive} || true)"
+#else
+root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}' || true)"
+#fi
 
 media_device=${root_drive%p*}
 
@@ -66,20 +66,6 @@ if [ "x${storage_media}" = "x" ]; then
 	fi	
 fi
 
-wfile="/boot/SOC.sh"
-#dest=$(cat $wfile | grep "dest=" | awk -F '=' '{print $3}')
-#if [ "x${dest}" = "x" ];then
-flash_devices=$(cat /proc/partitions|grep -e "mmcblk[0-9]$"| awk  '{print $4}')
-for device in ${flash_devices}
-	do
-	if [ "x/dev/${device}" = "x${media_device}" ];then
-		continue;
-	fi
-	dest=/dev/${device}
-	break;
-done	
-sed ${wfile} -i -e "s>^dest=.*>dest=$dest>"
-#fi
 
 modprobe g_multi file=${actual_image_file} removable=1 cdrom=0 ro=0 stall=0 nofua=1 iManufacturer=embedfire iProduct=embedfire iSerialNumber=1234fire5678
 
