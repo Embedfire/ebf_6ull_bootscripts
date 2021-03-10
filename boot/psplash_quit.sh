@@ -25,8 +25,3 @@ done
 
 sudo psplash-write  "PROGRESS 95"
 #sudo psplash-write QUIT
-if [ -f /home/debian/qt-app-static/run.sh ] ; then
-    sudo /home/debian/qt-app-static/run.sh &
-else
-    sudo /home/debian/qt-app/run.sh &
-fi
