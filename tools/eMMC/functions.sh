@@ -142,7 +142,7 @@ mmc_mount_fail() {
 
 try_vfat() {
 	echo_broadcast "====> Mounting ${boot_drive} Read Only over /boot/uboot (trying vfat)"
-	mount -t vfat ${boot_drive} /boot/uboot/ -o ro || mmc_mount_fail
+	mount -t vfat ${boot_drive} /boot/uboot/  || mmc_mount_fail
 }
 
 prepare_environment() {
@@ -241,7 +241,7 @@ prepare_environment() {
 			mkdir -p /boot/uboot
 		fi
 		if [ ! ${is_mounted} ];then 
-			mount ${boot_drive} /boot/uboot -o ro || try_vfat
+			mount ${boot_drive} /boot/uboot  || try_vfat
 		fi
 		echo_broadcast "====> /dev/mmcblk1p4 already mounted on /boot."
 	fi
