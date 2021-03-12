@@ -1050,7 +1050,7 @@ _generate_fstab() {
 	empty_line
 	echo_broadcast "==> Generating: /etc/fstab"
 	echo "# /etc/fstab: static file system information." > ${tmp_rootfs_dir}/etc/fstab
-:<<eof
+
 	echo "#" >> ${tmp_rootfs_dir}/etc/fstab
 	if [ "${boot_partition}x" != "${rootfs_partition}x" ] ; then
 
@@ -1081,7 +1081,7 @@ _generate_fstab() {
 			echo "${rootfs_partition}  /  ext4  noatime,errors=remount-ro  0  1" >> ${tmp_rootfs_dir}/etc/fstab
 		fi
 	fi
-eof
+
 	echo "debugfs  /sys/kernel/debug  debugfs  defaults  0  0" >> ${tmp_rootfs_dir}/etc/fstab
 	echo_broadcast "===> /etc/fstab generated"
 	generate_line 40 '*'
