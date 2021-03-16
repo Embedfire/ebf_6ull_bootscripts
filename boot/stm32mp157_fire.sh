@@ -5,6 +5,50 @@ boot_dir="/boot"
 
 unset root_drive
 
+do_expand(){
+	if [ -f /home/debian/.resizerootfs ] ; then
+	# now set up an init.d script
+	cat <<EOF > /etc/init.d/resize2fs_once &&
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          resize2fs_once
+# Required-Start:
+# Required-Stop:
+# Default-Start: 3
+# Default-Stop:
+# Short-Description: Resize the root filesystem to fill partition
+# Description:
+### END INIT INFO
+
+. /lib/lsb/init-functions
+
+case "\$1" in
+	start)
+		log_daemon_msg "Starting resize2fs_once" &&
+		resize2fs $root_drive &&
+		update-rc.d resize2fs_once remove &&
+		rm /etc/init.d/resize2fs_once &&
+		log_end_msg \$?
+	;;
+	*)
+		echo "Usage: \$0 start" >&2
+		exit 3
+	;;
+esac
+EOF
+	chmod +x /etc/init.d/resize2fs_once &&
+	update-rc.d resize2fs_once defaults &&
+	echo "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
+	rm /home/debian/.resizerootfs
+	mkdir /boot/dtbs/
+	mkdir /boot/dtbs/overlays
+	systemctl reboot
+	fi
+}
+
+
+
+
 #root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root=UUID= | awk -F 'root=' '{print $2}' || true)"
 #if [ ! "x${root_drive}" = "x" ] ; then
 #	root_drive="$(/sbin/findfs ${root_drive} || true)"
@@ -17,6 +61,7 @@ root_drive="$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '
 # mount boot partation
 #boot_drive=$(sfdisk -ld ${media_device} | grep boot | awk -F ':' '{print $1}')
 
+do_expand
 
 #mount ${boot_drive} /boot
 
