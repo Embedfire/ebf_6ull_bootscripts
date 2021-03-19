@@ -868,8 +868,8 @@ _copy_boot() {
 	if [ ! "x${boot_drive}" = "x${root_drive}" ] || [ -f /boot/uboot/MLO ] ; then
 		echo_broadcast "==> rsync: /boot/uboot/ -> ${tmp_boot_dir}"
 		get_rsync_options
-    sed -i -e 's:'$oncescript':#'$oncescript':g' /boot/uboot/uEnv.txt
-		rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
+    sed -i -e "s/^flash_firmware=once/#flash_firmware=once/" /boot/uboot/uEnv.txt
+    rsync -aAxv $rsync_options /boot/uboot/* ${tmp_boot_dir} --exclude={MLO,u-boot.img,uEnv.txt} || write_failure
 		if [ ! "x${boot_drive}" = "x${root_drive}" ] && [ -f /boot/uboot/uEnv.txt ] ; then
 			echo_broadcast "==> Found uEnv.txt in boot partition, copying"
 			cp -v /boot/uboot/uEnv.txt ${tmp_boot_dir}/
