@@ -141,15 +141,15 @@ EOF
 do_expand
 
 unset REBOOT
-if [ -n "`find /boot/dtbs/ -maxdepth 1 -name '*.dtb'`" ] ; then
-	sudo mv /boot/dtbs/*.dtb /usr/lib/linux-image-$(uname -r)
-	REBOOT=1
-fi
+#if [ -n "`find /boot/dtbs/ -maxdepth 1 -name '*.dtb'`" ] ; then
+#	sudo mv /boot/dtbs/*.dtb /usr/lib/linux-image-$(uname -r)
+#	REBOOT=1
+#fi
 
-if [ -n "`find /boot/dtbs/overlays -maxdepth 1 -name '*.dtbo'`" ] ; then
-	sudo mv /boot/dtbs/overlays/*.dtbo /usr/lib/linux-image-$(uname -r)/overlays
-	REBOOT=1
-fi
+#if [ -n "`find /boot/dtbs/overlays -maxdepth 1 -name '*.dtbo'`" ] ; then
+#	sudo mv /boot/dtbs/overlays/*.dtbo /usr/lib/linux-image-$(uname -r)/overlays
+#	REBOOT=1
+#fi
 
 if [ "x${REBOOT}" = "x1" ] ; then
 	systemctl reboot
