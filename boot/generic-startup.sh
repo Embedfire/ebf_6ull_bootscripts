@@ -20,6 +20,9 @@ fi
 
 #Resize drive when requested
 if [ -d /home/.resizerootfs ] ; then
+	
+	dpkg-reconfigure openssh-server
+
 	ROOT_PART=$(mount | sed -n 's|^/dev/\(.*\) on / .*|\1|p')
 
   	PART_NUM=${ROOT_PART#mmcblk0p}
