@@ -6,7 +6,7 @@ boot_dir="/boot"
 unset root_drive
 
 do_expand(){
-	if [ -f /home/debian/.resizerootfs ] ; then
+	if [ -d /home/cat/.resizerootfs ] ; then
 	# now set up an init.d script
 	cat <<EOF > /etc/init.d/resize2fs_once &&
 #!/bin/sh
@@ -39,7 +39,7 @@ EOF
 	chmod +x /etc/init.d/resize2fs_once &&
 	update-rc.d resize2fs_once defaults &&
 	echo "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
-	rm /home/debian/.resizerootfs
+	rm /home/cat/.resizerootfs
 	mkdir /boot/dtbs/
 	mkdir /boot/dtbs/overlays
 	systemctl reboot
