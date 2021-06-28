@@ -62,7 +62,7 @@ fi
 
 #Resize drive when requested
 do_expand(){
-	if [ -d /home/debian/.resizerootfs ] ; then
+	if [ -d /home/cat/.resizerootfs ] ; then
 	depmod -a
 		ROOT_DEV=$(cat /proc/cmdline | sed 's/ /\n/g' | grep root= | awk -F 'root=' '{print $2}'| awk -F '/' '{print $3}')
 		#${conf_root_device#/dev/}
@@ -131,7 +131,7 @@ EOF
 	chmod +x /etc/init.d/resize2fs_once &&
 	update-rc.d resize2fs_once defaults &&
 	echo "Root partition has been resized.\nThe filesystem will be enlarged upon the next reboot"
-	rmdir /home/debian/.resizerootfs
+	rmdir /home/cat/.resizerootfs
 	mkdir /boot/dtbs/
 	mkdir /boot/dtbs/overlays
 	systemctl reboot
